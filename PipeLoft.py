@@ -29,14 +29,14 @@ def makePipeShape(From, To, UnTwist):
 	wf=getFace(From).SubShapes
 	wt=getFace(To).SubShapes	
 
-	if UnTwist:
-		l1 = Part.makeLoft([wf[0],wt[1]],solid=True)
-		l2 = Part.makeLoft([wf[1],wt[0]],solid=True)
-	else:
-		l1 = Part.makeLoft([wf[0],wt[0]],solid=True)
-		l2 = Part.makeLoft([wf[1],wt[1]],solid=True)
+	length = min(len(wf), len(wt))
 
-	p = l1.cut(l2)
+	l=[]
+	for i in range(length):
+		p = Part.makeLoft([wf[i],wt[i]],solid=True)
+		l.append(p)
+
+	p = l[0].cut(l[1:])
 	return p
 
 class PipeLoft:
