@@ -21,7 +21,17 @@ import FreeCAD as App
 import os
 from pathlib import Path
 
-def computeShape(Object, sub, length, reverse=False):
+def computeRadialTangent(normal, vertex, center, angle):
+	radial = vertex.Point - center
+	radial.normalize()
+
+	tangent = radial.cross(normal)
+
+	rot = App.Rotation(tangent, angle)
+	return rot.multVec(normal)
+
+
+def computeShape(Object, sub, length, reverse=False, angle=0):
 	f=None
 	norm=None
 	v=None
@@ -42,6 +52,8 @@ def computeShape(Object, sub, length, reverse=False):
 		v = Object.Shape.Vertexes[ix-1]
 		p = Object.Shape.findPlane()
 		norm = p.normal(1,1)
+		if(angle):
+			norm = computeRadialTangent(norm, v, Object.Shape.CenterOfGravity, angle)
 
 	if not norm or not v:
 		return None
@@ -57,6 +69,7 @@ class NormalLine:
 	def __init__(self, obj):
 		obj.Proxy = self
 		obj.addProperty("App::PropertyFloat", "Length", "Dimensions")
+		obj.addProperty("App::PropertyFloat", "Angle", "Dimensions").Angle=0
 		obj.addProperty("App::PropertyLinkSubList", "Base", "Dimensions")
 		obj.addProperty("App::PropertyBool", "Reverse", "Dimensions").Reverse=False
 
@@ -68,7 +81,7 @@ class NormalLine:
 		print(obj.Base)
 		o=obj.Base[0][0]
 		sub=obj.Base[0][1][0]
-		obj.Shape=computeShape(o, sub, obj.Length, obj.Reverse)
+		obj.Shape=computeShape(o, sub, obj.Length, obj.Reverse, obj.Angle)
 
 	def onChanged(self, obj, name):
 		print("onChanged", name)
@@ -120,7 +133,7 @@ class ViewProviderNormalLine:
         Print the name of the property that has changed
         """
 
-        App.Console.PrintMessage("Change property: " + str(prop) + "\n")
+#        App.Console.PrintMessage("Change property: " + str(prop) + "\n")
 
     def claimChildren(self):
         if hasattr(self,"fp"):
@@ -177,16 +190,22 @@ class ViewProviderNormalLine:
         Called during document restore.
         """
 
-def create(name="NormalLine"):
-    sel2 = FreeCADGui.Selection.getSelectionEx()[0] 
-    print("sel2=",sel2)
-
+def _create(obj, element, name="NormalLine"):
     myObj = App.ActiveDocument.addObject("Part::FeaturePython", "NormalLine")
     NormalLine(myObj)
     myObj.Length=10
-    myObj.Base=(sel2.Object, (sel2.SubElementNames[0]))
+    myObj.Base=(obj, (element))
     ViewProviderNormalLine(myObj.ViewObject)
     App.ActiveDocument.recompute()
+
+def expandSelection(sel):
+	for s in sel:
+		for e in s.SubElementNames:
+			yield (s.Object, e)
+
+def create(name=NormalLine):
+    for (o,s) in expandSelection(FreeCADGui.Selection.getSelectionEx()):
+        _create(o,s,name)
 
 
 # -------------------------- Gui command --------------------------------------------------
@@ -208,9 +227,6 @@ def CreateNormalLine(name):
     App.ActiveDocument.openTransaction("Create NormalLine")
     FreeCADGui.addModule("NormalLine")
     FreeCADGui.doCommand("f = NormalLine.create(name = '"+name+"')")
-#    FreeCADGui.doCommand("f.Base = FreeCADGui.Selection.getSelection()[0]")
-#    FreeCADGui.doCommand("lattice2Executer.executeFeature(f)")
-#    FreeCADGui.doCommand("f.Spine.ViewObject.hide()")
     FreeCADGui.doCommand("f = None")
     App.ActiveDocument.commitTransaction()
 
@@ -223,14 +239,7 @@ class _CommandNormalLine:
                 'ToolTip': QtCore.QT_TRANSLATE_NOOP("4axis_NormalLine","Extrude individual shapes in a compound shape")}
         
     def Activated(self):
-        if len(FreeCADGui.Selection.getSelection()) == 1 :
-            CreateNormalLine(name = "NormalLine")
-        else:
-            mb = QtGui.QMessageBox()
-            mb.setIcon(mb.Icon.Warning)
-            mb.setText(translate("4Axis_NormalLine", "Select a shape that is a compound first!", None))
-            mb.setWindowTitle(translate("4axis_NormalLine","Bad selection", None))
-            mb.exec_()
+        CreateNormalLine(name = "NormalLine")
             
     def IsActive(self):
         if App.ActiveDocument:
