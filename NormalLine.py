@@ -84,7 +84,8 @@ class NormalLine:
 		obj.Shape=computeShape(o, sub, obj.Length, obj.Reverse, obj.Angle)
 
 	def onChanged(self, obj, name):
-		print("onChanged", name)
+		pass
+#		print("onChanged", name)
 		
 class ViewProviderNormalLine:
 
