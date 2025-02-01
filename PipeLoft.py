@@ -22,6 +22,8 @@ import os
 from pathlib import Path
 
 def getFace(sublink):
+	if not sublink[1]:
+		return Part.makeFace(sublink[0].Shape)
 	idx = int(sublink[1][4:])
 	return sublink[0].Shape.Faces[idx-1]
 
@@ -163,17 +165,28 @@ class ViewProviderPipeLoft:
         Called during document restore.
         """
 
-def create(name="PipeLoft"):
-    sel2 = FreeCADGui.Selection.getSelectionEx()
-    print("sel2=",sel2)
+def _create(obj1, sub1, obj2, sub2, name="PipeLoft"):
 
+    print("_create:", obj1, sub1, obj2, sub2)
     myObj = App.ActiveDocument.addObject("Part::FeaturePython", "PipeLoft")
     PipeLoft(myObj)
 
-    myObj.Base = [ (sel2[0].Object, (sel2[0].SubElementNames[0])), (sel2[1].Object, (sel2[1].SubElementNames[0]))]
+    myObj.Base = [ (obj1, (sub1)), (obj2, (sub2))]
     ViewProviderPipeLoft(myObj.ViewObject)
     App.ActiveDocument.recompute()
 
+def create(name="PipeLoft"):
+    sel2 = FreeCADGui.Selection.getSelectionEx()
+    if sel2[0].SubElementNames:
+        s1 = sel2[0].SubElementNames[0]
+    else:
+        s1=""
+
+    if sel2[1].SubElementNames:
+        s2 = sel2[1].SubElementNames[0]
+    else:
+        s2=""
+    _create(sel2[0].Object, s1, sel2[1].Object, s2)
 
 # -------------------------- Gui command --------------------------------------------------
 
