@@ -11,3 +11,5 @@ Especially useful for a ShapeString on a polar path in Lattice2
 ## NormalLine ![](/NormalLine.svg)
 Create a line normal to a face or a closed edge.
 
+## PipeLoft ![](/PipeLoft.svg)
+Lofts from one face to another in the Part workbench. Works more like the loft tool in PartDesign.
