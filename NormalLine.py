@@ -23,21 +23,33 @@ from pathlib import Path
 
 def computeShape(Object, sub, length, reverse=False):
 	f=None
+	norm=None
+	v=None
 	if "Edge" in sub:
 		ix = int(sub[4:])
 		edge= Object.Shape.Edges[ix-1]
 		f=Part.makeFace(edge)
+		norm = f.normalAt(1,1)
+		v = Part.Vertex(f.CenterOfMass)
 	if "Face" in sub:
 		ix = int(sub[4:])
 		f = Object.Shape.Faces[ix-1]
+		norm = f.normalAt(1,1)
+		v = Part.Vertex(f.CenterOfMass)
 
-	if not f:
+	if "Vertex" in sub:
+		ix=int(sub[6:])
+		v = Object.Shape.Vertexes[ix-1]
+		p = Object.Shape.findPlane()
+		norm = p.normal(1,1)
+
+	if not norm or not v:
 		return None
 
 	if reverse:
 		length = -length
-	v = Part.Vertex(f.CenterOfMass)
-	ex = v.extrude(f.normalAt(1,1)*length)
+
+	ex = v.extrude(norm*length)
 
 	return ex
 
