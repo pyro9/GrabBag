@@ -8,7 +8,7 @@ Select a path and the Path Helix tool. Adjust the helix in the data pane. The he
 
 ## Extruder ![](/Extruder.svg)
 Given an object containing multiple shapes, extrude each shape individually along its normal.
-Especially useful for a ShapeString on a polar path in Lattice2
+Especially useful for a ShapeString copied into a polar lattice in Lattice2
 
 ## NormalLine ![](/NormalLine.svg)
 Create a line normal to a face or a closed edge.
