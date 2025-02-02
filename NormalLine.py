@@ -243,6 +243,7 @@ class _CommandNormalLine:
         CreateNormalLine(name = "NormalLine")
             
     def IsActive(self):
+        return True
         if App.ActiveDocument:
             return activeBody() is None
         else:
