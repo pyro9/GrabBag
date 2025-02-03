@@ -16,5 +16,8 @@ Create a line normal to a face or a closed edge. A DiscretizedEdge is a special 
 ## PipeLoft ![PipeLoft icon](/PipeLoft.svg)
 Lofts from one face to another in the Part workbench. Works more like the loft tool in PartDesign.
 
+## WireBinder ![WireBinder icon](/WireBinder.svg)
+Works similar to sub-object shape binder, but selects shape wires by number from the feature it is applied to. Notably, connected lines in a sketch will form a single wire.
+
 ## Install
 Just clone this repository in your FreeCAD/Mod directory, then (re)start FreeCAD.
