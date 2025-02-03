@@ -206,6 +206,9 @@ def expandSelection(sel):
 
 def create(name=NormalLine):
     for (o,s) in expandSelection(FreeCADGui.Selection.getSelectionEx()):
+#        b=activeBody()
+#        if b:
+#            o=b
         _create(o,s,name)
 
 
