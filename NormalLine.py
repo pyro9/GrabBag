@@ -35,19 +35,23 @@ def computeShape(Object, sub, length, reverse=False, angle=0):
 	f=None
 	norm=None
 	v=None
-	if "Edge" in sub:
+	if not sub:
+		v = Part.Vertex(Object.Shape.CenterOfMass)
+		f=Part.makeFace(Object.Shape)
+		norm = f.normalAt(1,1)
+	elif "Edge" in sub:
 		ix = int(sub[4:])
 		edge= Object.Shape.Edges[ix-1]
 		f=Part.makeFace(edge)
 		norm = f.normalAt(1,1)
 		v = Part.Vertex(f.CenterOfMass)
-	if "Face" in sub:
+	elif "Face" in sub:
 		ix = int(sub[4:])
 		f = Object.Shape.Faces[ix-1]
 		norm = f.normalAt(1,1)
 		v = Part.Vertex(f.CenterOfMass)
 
-	if "Vertex" in sub:
+	elif "Vertex" in sub:
 		ix=int(sub[6:])
 		v = Object.Shape.Vertexes[ix-1]
 		p = Object.Shape.findPlane()
@@ -201,8 +205,11 @@ def _create(obj, element, name="NormalLine"):
 
 def expandSelection(sel):
 	for s in sel:
-		for e in s.SubElementNames:
-			yield (s.Object, e)
+		if s.SubElementNames: 
+			for e in s.SubElementNames:
+				yield (s.Object, e)
+		else:
+			yield (s.Object, '')
 
 def create(name=NormalLine):
     for (o,s) in expandSelection(FreeCADGui.Selection.getSelectionEx()):
