@@ -32,7 +32,7 @@ class WireBinder:
 		pass
 
 	def execute(self, obj):
-		print(obj.Base)
+#		print(obj.Base)
 		if obj.Wire==-1:
 			obj.Shape = Part.makeCompound(obj.Base[0].Shape.Wires)
 		else:
@@ -146,15 +146,19 @@ class ViewProviderWireBinder:
         Called during document restore.
         """
 
-def create(name="WireBinder"):
-    sel = FreeCADGui.Selection.getSelectionEx()[0]
-
-    myObj = App.ActiveDocument.addObject("Part::FeaturePython", "WireBinder")
+def _create(obj, name="WireBinder"):
+    myObj = App.ActiveDocument.addObject("Part::FeaturePython", name)
     WireBinder(myObj)
-    myObj.Base= sel.Object 
+    myObj.Base= obj 
     myObj.Wire=-1
     ViewProviderWireBinder(myObj.ViewObject)
     App.ActiveDocument.recompute()
+    return myObj
+
+def create(name="WireBinder"):
+    sel = FreeCADGui.Selection.getSelectionEx()[0]
+    return _create(obj, name=name)
+
 
 # -------------------------- Gui command --------------------------------------------------
 
