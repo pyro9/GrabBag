@@ -157,7 +157,7 @@ def _create(obj, name="WireBinder"):
 
 def create(name="WireBinder"):
     sel = FreeCADGui.Selection.getSelectionEx()[0]
-    return _create(obj, name=name)
+    return _create(sel.Object, name=name)
 
 
 # -------------------------- Gui command --------------------------------------------------
