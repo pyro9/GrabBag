@@ -36,7 +36,7 @@ def computeShape(Object, sub, length, reverse=False, angle=0):
 	norm=None
 	v=None
 	if not sub:
-		v = Part.Vertex(Object.Shape.CenterOfMass)
+		v = Part.Vertex(Object.Shape.CenterOfGravity)
 		f=Part.makeFace(Object.Shape)
 		norm = f.normalAt(1,1)
 	elif "Edge" in sub:
