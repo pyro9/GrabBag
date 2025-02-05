@@ -26,36 +26,61 @@ def computeRadialTangent(normal, vertex, center, angle):
 	radial = vertex.Point - center
 	radial.normalize()
 
-	tangent = radial.cross(normal)
+	tangent = radial.cross(abs(normal))
 
 	rot = App.Rotation(tangent, angle)
-	return rot.multVec(normal)
+	ret=rot.multVec(normal)
+	return ret
 
-def computeShape(radius, magnitude, frequency, num):
+def computeShapeSpherical(radius, magnitude, frequency, phase, num):
 	vtcs=[]
 
 	delta = 2*math.pi/num
 
 	for i in range(num):
 		theta=i*delta
-		z = math.sin(theta*frequency)*magnitude
-		x=math.cos(theta)*radius
-		y=math.sin(theta)*radius
+
+		Ztheta = math.sin((theta+phase)*frequency)*magnitude
+		z = math.sin(Ztheta)*radius
+		rad = math.cos(Ztheta)*radius
+		x=math.cos(theta)*rad
+		y=math.sin(theta)*rad
+
 		vtcs.append(App.Vector(x,y,z))
 
 	print(vtcs)
-#	w=Draft.makeWire(vtcs , closed=False, face=False, support=None)
 
-	if False:
-		bspline = Draft.makeBSpline(vtcs, closed=True, face=False)
-
-		bspline.recompute()
-		shp = bspline.Shape
-		bspline.Document.removeObject(bspline.Name)
-	else:
+	if True:
 		spline=Part.BSplineCurve()
 		spline.interpolate(vtcs, PeriodicFlag=True)
 		shp=spline.toShape()
+	else:
+		shp = Part.makeCompound(vtcs)
+
+	return shp
+
+def computeShape(radius, magnitude, frequency, phase, num, phi=0):
+	vtcs=[]
+
+	delta = 2*math.pi/num
+
+	for i in range(num):
+		theta=i*delta
+		z = math.sin((theta+phase)*frequency)*magnitude
+		x=math.cos(theta)*radius
+		y=math.sin(theta)*radius
+
+		if phi:
+			vec = computeRadialTangent(App.Vector(0,0,z), Part.Vertex(x,y,0) , App.Vector(0,0,0), phi)
+			vtcs.append( App.Vector(x,y,0) + vec)
+		else:
+			vtcs.append(App.Vector(x,y,z))
+
+	print(vtcs)
+
+	spline=Part.BSplineCurve()
+	spline.interpolate(vtcs, PeriodicFlag=True)
+	shp=spline.toShape()
 
 	return shp
 	
@@ -64,17 +89,25 @@ def computeShape(radius, magnitude, frequency, num):
 class Sine:
 	def __init__(self, obj):
 		obj.Proxy = self
-		obj.addProperty("App::PropertyFloat", "Radius", "Dimensions").Radius=1
-		obj.addProperty("App::PropertyFloat", "Magnitude", "Dimensions").Magnitude=1
-		obj.addProperty("App::PropertyFloat", "Frequency", "Dimensions").Frequency=1
-		obj.addProperty("App::PropertyInteger", "Num", "Dimensions").Num=40
+		obj.addProperty("App::PropertyFloat", "Radius", "Dimensions").Radius=10
+		obj.addProperty("App::PropertyFloat", "Amplitude", "Dimensions").Amplitude=10
+		obj.addProperty("App::PropertyFloat", "Frequency", "Dimensions").Frequency=2
+		obj.addProperty("App::PropertyFloat", "Phase", "Dimensions").Phase=0
+		obj.addProperty("App::PropertyFloat", "Phi", "Dimensions").Phi=0
+		obj.addProperty("App::PropertyInteger", "Num", "Dimensions").Num=180
+		
+		obj.addProperty("App::PropertyEnumeration", "Type", "Dimensions").Type= ['Circular', 'Spherical']
+		obj.Type='Circular'
 
 
 	def onDocumentRestored(self, obj):
 		pass
 
 	def execute(self, obj):
-		obj.Shape=computeShape(obj.Radius, obj.Magnitude, obj.Frequency, obj.Num)
+		if obj.Type == 'Circular':
+			obj.Shape=computeShape(obj.Radius, obj.Amplitude, obj.Frequency, obj.Phase, obj.Num, obj.Phi)
+		else:
+			obj.Shape=computeShapeSpherical(obj.Radius, obj.Amplitude, obj.Frequency, obj.Phase, obj.Num)
 
 	def onChanged(self, obj, name):
 		pass
