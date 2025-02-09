@@ -48,8 +48,11 @@ def computeShape(Object, sub, length, reverse=False, angle=0):
 	elif "Face" in sub:
 		ix = int(sub[4:])
 		f = Object.Shape.Faces[ix-1]
-		norm = f.normalAt(1,1)
-		v = Part.Vertex(f.CenterOfMass)
+		(a,b,c,d) = f.ParameterRange
+		u = (b-a)/2+a
+		v = (d-c)/2+c
+		norm = f.normalAt(u,v)
+		v = Part.Vertex(f.valueAt(u,v))
 
 	elif "Vertex" in sub:
 		ix=int(sub[6:])
@@ -247,7 +250,7 @@ class _CommandNormalLine:
         return {'Pixmap'  : str(Path(__file__).parent / 'NormalLine.svg'),
                 'MenuText': QtCore.QT_TRANSLATE_NOOP("4axis_NormalLine","NormalLine"),
                 'Accel': "",
-                'ToolTip': QtCore.QT_TRANSLATE_NOOP("4axis_NormalLine","Extrude individual shapes in a compound shape")}
+                'ToolTip': QtCore.QT_TRANSLATE_NOOP("4axis_NormalLine","Create a line normal to the selected feature (generally a face or a closed planar edge)")}
         
     def Activated(self):
         CreateNormalLine(name = "NormalLine")
