@@ -35,6 +35,8 @@ class WireBinder:
 #		print(obj.Base)
 		if obj.Wire==-1:
 			obj.Shape = Part.makeCompound(obj.Base[0].Shape.Wires)
+			m = obj.Base[0].Placement.Matrix.inverse()
+			obj.Shape = obj.Shape.transformGeometry(m)
 		else:
 			obj.Shape = obj.Base[0].Shape.Wires[obj.Wire]
 
