@@ -21,6 +21,9 @@ import FreeCAD as App
 import os
 from pathlib import Path
 
+def fixPlacement(s,p):
+	s.Placement=p
+	return s
 
 class WireBinder:
 	def __init__(self, obj):
@@ -34,9 +37,8 @@ class WireBinder:
 	def execute(self, obj):
 #		print(obj.Base)
 		if obj.Wire==-1:
-			obj.Shape = Part.makeCompound(obj.Base[0].Shape.Wires)
-			m = obj.Base[0].Placement.Matrix.inverse()
-			obj.Shape = obj.Shape.transformGeometry(m)
+			p = App.Placement()
+			obj.Shape = Part.makeCompound( [ fixPlacement(w,p) for w in obj.Base[0].Shape.Wires])
 		else:
 			obj.Shape = obj.Base[0].Shape.Wires[obj.Wire]
 
@@ -148,12 +150,20 @@ class ViewProviderWireBinder:
         Called during document restore.
         """
 
+def attach(myObj, obj):
+    myObj.addExtension('Part::AttachExtensionPython')
+    myObj.AttacherEngine="Engine 3D"
+    myObj.MapMode="ObjectXY"
+    myObj.AttachmentSupport=obj
+    myObj.MapPathParameter=0
+
 def _create(obj, name="WireBinder"):
     myObj = App.ActiveDocument.addObject("Part::FeaturePython", name)
     WireBinder(myObj)
     myObj.Base= obj 
     myObj.Wire=-1
     ViewProviderWireBinder(myObj.ViewObject)
+    attach(myObj,obj)
     App.ActiveDocument.recompute()
     return myObj
 
