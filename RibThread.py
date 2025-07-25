@@ -196,7 +196,7 @@ else:
 				}
 		
 		def Activated(self):
-			CreateNormalLine(name = "RibThread")
+			CreateRibThread(name = "RibThread")
 		    
 		def IsActive(self):
 			return True
