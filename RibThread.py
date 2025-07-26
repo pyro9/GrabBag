@@ -146,7 +146,7 @@ class ViewProviderRibThread:
 		Called during document restore.
 		"""
 
-def create(name='RibThread'):
+def _create(name='RibThread'):
 #	sel2 = FreeCADGui.Selection.getSelection()[0] 
 #	print("sel2=",sel2)
 
@@ -159,7 +159,43 @@ def create(name='RibThread'):
 	myObj.BoreDepth = 1
 	ViewProviderRibThread(myObj.ViewObject)
 	App.ActiveDocument.recompute()
+	return myObj
 
+
+def attach(myObj, obj, mode='InertialCS', sub=''):
+	print(f"{myObj}, {obj}, {sub}")
+	myObj.addExtension('Part::AttachExtensionPython')
+	myObj.AttacherEngine="Engine 3D"
+	if sub:
+		myObj.AttachmentSupport=[(obj,sub)]
+	else:
+		myObj.AttachmentSupport=obj
+	myObj.MapMode=mode
+	myObj.MapPathParameter=0
+
+def create(name='RibThread'):
+	sel2 = FreeCADGui.Selection.getSelectionEx() 
+	if not sel2:
+		return _create(name=name)
+
+	for sel in sel2:
+		print("sel2=",sel)
+		if sel.HasSubObjects:
+			for s in sel.SubElementNames:
+				o=_create(name)
+				o.invert=True
+				attach(o, sel.Object, sub=s)
+				o.MapReversed=True
+		else:
+			if sel.Object.TypeId == 'Sketcher::SketchObject':
+				for i in range( len(sel.Object.Geometry)):
+					if sel.Object.Geometry[i].TypeId == 'Part::GeomCircle':
+						o=_create(name=name)
+						o.invert=True
+						attach(o, sel.Object, sub=f"Edge{i+1}", mode="Concentric")
+						o.MapReversed=True
+
+#	_create(name=name)
 
 # -------------------------- Gui command --------------------------------------------------
 
