@@ -53,6 +53,15 @@ def computeShape(radius, DrillRadius, height, count, depth, invert=False, debug=
 	tool = cyl.cut(ribs)
 	return tool
 
+def getAttachedRadius(obj):
+	try:
+		e=obj.AttachmentSupport[0][1][0]
+		o=obj.AttachmentSupport[0][0]
+		i = int(e[4])
+		return o.Geometry[i-1].Radius
+	except:
+		return 0
+
 class RibThread:
 	def __init__(self, obj):
 		obj.Proxy = self
@@ -71,7 +80,14 @@ class RibThread:
 #		obj.ViewObject.Proxy.fp = obj
 
 	def execute(self, obj):
-		obj.Shape=computeShape(obj.Diameter/2, obj.DrillDiameter/2, obj.Height, obj.RibCount, obj.BoreDepth, obj.invert, obj.debug)
+		dia = obj.Diameter
+		if not dia:
+			dia=getAttachedRadius(obj)*2
+		drill = obj.DrillDiameter
+		if drill >= dia:
+			drill = 0.9*dia
+
+		obj.Shape=computeShape(dia/2, drill/2, obj.Height, obj.RibCount, obj.BoreDepth, obj.invert, obj.debug)
 
 	def onChanged(self, obj, name):
 		print("onChanged", name)
