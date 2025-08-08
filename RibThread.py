@@ -1,4 +1,4 @@
-#   Copyright (c) 2024 Steven James <pyro@4axisprinting.com>        
+#   Copyright (c) 2025 Steven James <pyro@4axisprinting.com>        
 #                                                                         
 #   This library is free software; you can redistribute it and/or
 #   modify it under the terms of the GNU Library General Public
@@ -209,6 +209,8 @@ def create(name='RibThread'):
 						o=_create(name=name)
 						o.invert=True
 						attach(o, sel.Object, sub=f"Edge{i+1}", mode="Concentric")
+						o.Diameter=0	# so it will take the size of the circle
+						o.DrillDiameter=1000	# make it silly large so execute will use 90% of the Diameter instead.
 						o.MapReversed=True
 
 #	_create(name=name)
