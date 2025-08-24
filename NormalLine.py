@@ -31,7 +31,7 @@ def computeRadialTangent(normal, vertex, center, angle):
 	return rot.multVec(normal)
 
 
-def computeShape(Object, sub, length, reverse=False, angle=0):
+def computeShape(Object, sub, length, reverse=False, angle=0, U=0, V=0):
 	f=None
 	norm=None
 	v=None
@@ -48,11 +48,8 @@ def computeShape(Object, sub, length, reverse=False, angle=0):
 	elif "Face" in sub:
 		ix = int(sub[4:])
 		f = Object.Shape.Faces[ix-1]
-		(a,b,c,d) = f.ParameterRange
-		u = (b-a)/2+a
-		v = (d-c)/2+c
-		norm = f.normalAt(u,v)
-		v = Part.Vertex(f.valueAt(u,v))
+		norm = f.normalAt(U,V)
+		v = Part.Vertex(f.valueAt(U,V))
 
 	elif "Vertex" in sub:
 		ix=int(sub[6:])
@@ -79,6 +76,9 @@ class NormalLine:
 		obj.addProperty("App::PropertyFloat", "Angle", "Dimensions").Angle=0
 		obj.addProperty("App::PropertyLinkSubList", "Base", "Dimensions")
 		obj.addProperty("App::PropertyBool", "Reverse", "Dimensions").Reverse=False
+		obj.addProperty("App::PropertyBool", "Centered", "Dimensions").Reverse=False
+		obj.addProperty("App::PropertyFloatConstraint", "U", "Dimensions").U=(0,-100,100,1)
+		obj.addProperty("App::PropertyFloatConstraint", "V", "Dimensions").V=(0,-100,100,1)
 
 
 	def onDocumentRestored(self, obj):
@@ -88,11 +88,60 @@ class NormalLine:
 		print(obj.Base)
 		o=obj.Base[0][0]
 		sub=obj.Base[0][1][0]
-		obj.Shape=computeShape(o, sub, obj.Length, obj.Reverse, obj.Angle)
+		if "Face" in sub:
+			ix = int(sub[4:])
+			f = o.Shape.Faces[ix-1]
+			(umin,umax,vmin,vmax) = f.ParameterRange
+			if obj.U < umin:
+				obj.U = umin
+				obj.U = (umin, umin, umax, 0.1)	
+			elif obj.U > umax:
+				obj.U = umax
+				obj.U = (umax, umin, umax, 0.1)	
+
+			if obj.V < vmin:
+				obj.V = vmin
+				obj.V = (vmin, vmin, vmax, 0.1)	
+			elif obj.V > vmax:
+				obj.V = umax
+				obj.V = (umax, vmin, vmax, 0.1)	
+	
+			if obj.Centered:
+				obj.U = (umax+umin)/2
+				obj.V = (vmax+vmin)/2
+			
+		obj.Shape=computeShape(o, sub, obj.Length, obj.Reverse, obj.Angle, obj.U, obj.V)
 
 	def onChanged(self, obj, name):
-		pass
-#		print("onChanged", name)
+		if name == "Base":
+			Object=obj.Base[0][0]
+			sub=obj.Base[0][1][0]
+			if "Face" in sub:
+				ix = int(sub[4:])
+				f = Object.Shape.Faces[ix-1]
+				(umin,umax,vmin,vmax) = f.ParameterRange
+				u= (umax+umin)/2
+				v= (vmax+vmin)/2
+
+				obj.U = (u, umin, umax, 0.1)
+				obj.V = (v, vmin, vmax, 0.1)
+
+				obj.Centered=True
+				obj.setEditorMode("U", 1)
+				obj.setEditorMode("V", 1)
+			else:
+				obj.setEditorMode("Centered", 1)
+				obj.setEditorMode("U", 1)
+				obj.setEditorMode("V", 1)
+		
+		elif name == "Centered":
+			if obj.Centered:
+				obj.setEditorMode("U", 1)
+				obj.setEditorMode("V", 1)
+			else:
+				obj.setEditorMode("U", 0)
+				obj.setEditorMode("V", 0)
+
 		
 class ViewProviderNormalLine:
 
