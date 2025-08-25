@@ -31,7 +31,7 @@ def computeShape(Radius, Height, theta=2*pi/3):
 
 	sinval = sin(theta/2)
 	base = cos(theta/2)*Radius
-	tval = (pi-theta)/2
+	tval = tan((pi-theta)/2)
 
 	polypoints = [
 		App.Vector(base, sinval*Radius,0),
