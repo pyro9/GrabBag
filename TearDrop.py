@@ -26,25 +26,44 @@ from math import pi, sin,cos, tan
 #Deg60 = Deg30*2
 #Sin60 = sin(Deg60)
 
-def computeShape(Radius, Height, theta=2*pi/3):
+def computeShape(Radius, Height, theta=2*pi/3, mode='tearDrop'):
 	cyl = Part.makeCylinder(Radius, Height)
 
 	sinval = sin(theta/2)
 	base = cos(theta/2)*Radius
 	tval = (pi-theta)/2
 
-	polypoints = [
-		App.Vector(base, sinval*Radius,0),
-		App.Vector(-base, sinval*Radius,0),
-		App.Vector(0, sinval*Radius+tval*base, 0)
-		]
+	if 'Bridge' in mode:
+		if 'Outer' in mode:
+			polypoints = [
+				App.Vector(base, sinval*Radius,0),
+				App.Vector(-base, sinval*Radius,0),
+				App.Vector(-base, Radius, 0),
+				App.Vector(base, Radius, 0)
+				]
+		else:
+			polypoints = [
+				App.Vector(base, sinval*Radius,0),
+				App.Vector(-base, sinval*Radius,0),
+				App.Vector(-base, sinval*Radius+tval*base, 0),
+				App.Vector(base, sinval*Radius+tval*base, 0)
+				]
+	else:
+		polypoints = [
+			App.Vector(base, sinval*Radius,0),
+			App.Vector(-base, sinval*Radius,0),
+			App.Vector(0, sinval*Radius+tval*base, 0)
+			]
 	polypoints.append(polypoints[0])
 	
 	triWire = Part.makePolygon(polypoints)
 	tri = Part.makeFace(triWire)
 	tear = tri.extrude(Height * App.Vector(0,0,1))
 
-	tear = tear.fuse(cyl)
+	if mode=='InnerBridge':
+		tear = cyl.cut(tear)
+	else:
+		tear = tear.fuse(cyl)
 	return tear
 
 def getAttachedRadius(obj):
@@ -63,6 +82,10 @@ class Teardrop:
 		obj.Proxy = self
 		obj.addProperty("App::PropertyFloat", "Diameter", "Dimensions")
 		obj.addProperty("App::PropertyFloat", "Height", "Dimensions")
+		obj.addProperty("App::PropertyInteger", "Angle", "Dimensions")
+		obj.addProperty("App::PropertyEnumeration", "mode", "Dimensions")
+		obj.mode = [ 'tearDrop','InnerBridge', 'OuterBridge' ]
+		obj.mode=0
 
 
 #	def onDocumentRestored(self, obj):
@@ -75,7 +98,7 @@ class Teardrop:
 		if not dia:
 			dia=getAttachedRadius(obj)*2
 
-		obj.Shape=computeShape(dia/2, obj.Height)
+		obj.Shape=computeShape(dia/2, obj.Height, deg2rad(obj.Angle), obj.mode)
 
 	def onChanged(self, obj, name):
 		print("onChanged", name)
@@ -158,6 +181,7 @@ def _create(name='Teardrop'):
 	Teardrop(myObj)
 	myObj.Diameter=5
 	myObj.Height=10
+	myObj.Angle=120
 	ViewProviderTeardrop(myObj.ViewObject)
 	App.ActiveDocument.recompute()
 	return myObj
