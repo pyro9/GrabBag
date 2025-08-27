@@ -160,7 +160,7 @@ class ViewProviderTeardrop:
 		Return the icon in XMP format which will appear in the tree view. This method is optional and if not defined a default icon is shown.
 		"""
 
-		return str(Path(__file__).parent / 'Teardrop.svg')
+		return str(Path(__file__).parent / 'TearDrop.svg')
 
 	def dumps(self):
 		"""
@@ -251,7 +251,7 @@ else:
 	class _CommandTeardrop:
 		"Command to create Teardrop feature"
 		def GetResources(self):
-			return {'Pixmap'  : str(Path(__file__).parent / 'Teardrop.svg'),
+			return {'Pixmap'  : str(Path(__file__).parent / 'TearDrop.svg'),
 				'MenuText': QtCore.QT_TRANSLATE_NOOP("4axis_Teardrop","Teardrop"),
 				'Accel': "",
 				'ToolTip': QtCore.QT_TRANSLATE_NOOP("4axis_Teardrop","Create a line normal to the selected feature (generally a face or a closed planar edge)")
