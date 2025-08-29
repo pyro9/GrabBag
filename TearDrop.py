@@ -33,21 +33,13 @@ def computeShape(Radius, Height, theta=2*pi/3, mode='tearDrop'):
 	base = cos(theta/2)*Radius
 	tval = tan((pi-theta)/2)
 
-	if 'Bridge' in mode:
-		if 'Outer' in mode:
-			polypoints = [
-				App.Vector(base, sinval*Radius,0),
-				App.Vector(-base, sinval*Radius,0),
-				App.Vector(-base, Radius, 0),
-				App.Vector(base, Radius, 0)
-				]
-		else:
-			polypoints = [
-				App.Vector(base, sinval*Radius,0),
-				App.Vector(-base, sinval*Radius,0),
-				App.Vector(-base, sinval*Radius+tval*base, 0),
-				App.Vector(base, sinval*Radius+tval*base, 0)
-				]
+	if 'Outer' in mode:
+		polypoints = [
+			App.Vector(base, sinval*Radius,0),
+			App.Vector(-base, sinval*Radius,0),
+			App.Vector(-base, Radius, 0),
+			App.Vector(base, Radius, 0)
+			]
 	else:
 		polypoints = [
 			App.Vector(base, sinval*Radius,0),
