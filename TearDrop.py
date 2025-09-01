@@ -235,8 +235,8 @@ else:
 
 	def CreateTeardrop(name):
 		App.ActiveDocument.openTransaction("Create Teardrop")
-		FreeCADGui.addModule("Teardrop")
-		FreeCADGui.doCommand("f = Teardrop.create(name = '"+name+"')")
+		FreeCADGui.addModule("TearDrop")
+		FreeCADGui.doCommand("f = TearDrop.create(name = '"+name+"')")
 		FreeCADGui.doCommand("f = None")
 		App.ActiveDocument.commitTransaction()
 
