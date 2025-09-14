@@ -33,7 +33,7 @@ class ToBiArcs:
 	def __init__(self, obj):
 		obj.Proxy = self
 		obj.addProperty("App::PropertyLinkList", "Base", "Dimensions")
-		obj.addProperty("App::PropertyFloat", "Tolerance", "Dimensions").Tolerance=0.01
+		obj.addProperty("App::PropertyFloatConstraint", "Tolerance", "Dimensions").Tolerance=(0.01, 0.0, 1000.0, 0.01)
 		obj.addProperty("App::PropertyBool", "ClaimChildren", "Dimensions").ClaimChildren=True
 
 	def onDocumentRestored(self, obj):
@@ -139,6 +139,7 @@ def _create(obj, name="ToBiArcs"):
     ToBiArcs(myObj)
     myObj.Base= obj 
     ViewProviderToBiArcs(myObj.ViewObject)
+    obj.ViewObject.Visibility=False
     App.ActiveDocument.recompute()
     return myObj
 
