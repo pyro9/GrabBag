@@ -7,6 +7,7 @@ import WireBinder
 import Sine
 import RibThread
 import TearDrop
+import BiArc
 #import PlaceEdges
 
 print("This is a test!")
