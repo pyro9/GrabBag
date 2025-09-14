@@ -34,6 +34,7 @@ class ToBiArcs:
 		obj.Proxy = self
 		obj.addProperty("App::PropertyLinkList", "Base", "Dimensions")
 		obj.addProperty("App::PropertyFloat", "Tolerance", "Dimensions").Tolerance=0.01
+		obj.addProperty("App::PropertyBool", "ClaimChildren", "Dimensions").ClaimChildren=True
 
 	def onDocumentRestored(self, obj):
 		pass
@@ -103,7 +104,8 @@ class ViewProviderToBiArcs:
 
     def claimChildren(self):
         if hasattr(self,"fp"):
-            return [ self.fp.Base ]
+            if self.fp.ClaimChildren:
+                return self.fp.Base 
         return None
 
     def getIcon(self):
