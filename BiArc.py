@@ -147,54 +147,52 @@ def create(name="ToBiArcs"):
     sel = FreeCADGui.Selection.getSelectionEx()[0]
     return _create(sel.Object, name=name)
 
+# -------------------------- Gui command --------------------------------------------------
 if "FCMacro" in __file__:
 	create()
 else:
+	from PySide import QtCore
+	from PySide import QtGui
 
-# -------------------------- Gui command --------------------------------------------------
+	def translate(context, text, disambig):
+		#ToBiArcs is not translatable, sorry...
+		return text
 
-    from PySide import QtCore
-    from PySide import QtGui
+	def activeBody():
+		if App.ActiveDocument is None: return None
+		if not hasattr(FreeCADGui.ActiveDocument.ActiveView, 'getActiveObject'): #prevent errors in 0.16
+			return None
+		return FreeCADGui.ActiveDocument.ActiveView.getActiveObject("pdbody")
 
-    def translate(context, text, disambig):
-        #ToBiArcs is not translatable, sorry...
-        return text
+	def CreateToBiArcs(name):
+		App.ActiveDocument.openTransaction("Create ToBiArcs")
+		FreeCADGui.addModule("BiArc")
+		FreeCADGui.doCommand("f = BiArc.create(name = '"+name+"')")
+		FreeCADGui.doCommand("f = None")
+		App.ActiveDocument.commitTransaction()
 
-    def activeBody():
-        if App.ActiveDocument is None: return None
-        if not hasattr(FreeCADGui.ActiveDocument.ActiveView, 'getActiveObject'): #prevent errors in 0.16
-            return None
-        return FreeCADGui.ActiveDocument.ActiveView.getActiveObject("pdbody")
-
-    def CreateToBiArcs(name):
-        App.ActiveDocument.openTransaction("Create ToBiArcs")
-        FreeCADGui.addModule("ToBiArcs")
-        FreeCADGui.doCommand("f = ToBiArcs.create(name = '"+name+"')")
-        FreeCADGui.doCommand("f = None")
-        App.ActiveDocument.commitTransaction()
-
-    class _CommandToBiArcs:
-        "Command to create ToBiArcs feature"
-        def GetResources(self):
-            return {'Pixmap'  : str(Path(__file__).parent / 'ToBiArcs.svg'),
-                    'MenuText': QtCore.QT_TRANSLATE_NOOP("4axis_ToBiArcs","ToBiArcs"),
-                    'Accel': "",
-                    'ToolTip': QtCore.QT_TRANSLATE_NOOP("4axis_ToBiArcs","Extrude individual shapes in a compound shape")}
+	class _CommandToBiArcs:
+		"Command to create ToBiArcs feature"
+		def GetResources(self):
+			return {'Pixmap'  : str(Path(__file__).parent / 'ToBiArcs.svg'),
+				'MenuText': QtCore.QT_TRANSLATE_NOOP("4axis_ToBiArcs","ToBiArcs"),
+				'Accel': "",
+				'ToolTip': QtCore.QT_TRANSLATE_NOOP("4axis_ToBiArcs","Extrude individual shapes in a compound shape")}
         
-        def Activated(self):
-            CreateToBiArcs(name = "ToBiArcs")
+		def Activated(self):
+			CreateToBiArcs(name = "BiArc")
             
-        def IsActive(self):
-            return True
-            if App.ActiveDocument:
-                return activeBody() is None
-            else:
-                return False
+		def IsActive(self):
+			return True
+			if App.ActiveDocument:
+				return activeBody() is None
+			else:
+				return False
             
-    if App.GuiUp:
-        FreeCADGui.addCommand('4Axis_ToBiArcs', _CommandToBiArcs())
-        print("Added Command")
+	if App.GuiUp:
+		FreeCADGui.addCommand('4Axis_ToBiArcs', _CommandToBiArcs())
+		print("Added Command")
 
-    exportedCommands = ['4Axis_ToBiArcs']
-    print("I am ToBiArcs!")
-    # -------------------------- /Gui command --------------------------------------------------
+	exportedCommands = ['4Axis_ToBiArcs']
+	print("I am ToBiArcs!")
+# -------------------------- /Gui command --------------------------------------------------
