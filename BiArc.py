@@ -26,14 +26,39 @@ def fixPlacement(s,p):
 	return s
 
 def EdgeToBiArcs(Edge, tolerance=0.01):
-	l = Edge.Curve.toBiArcs(tolerance)
+	if type(Edge.Curve) == Part.Line:
+		l=Edge.Curve.toNurbs(Edge.FirstParameter,Edge.LastParameter)
+		l = l.toBiArcs(tolerance)
+	else:
+		l = Edge.Curve.toBiArcs(tolerance)
 	return Part.makeCompound(l)
+
+def EdgeToBSpline(e):
+	try:
+		c=e.toNurbs().Edge1.Curve
+	except:
+		print("Nurbs Fail")
+		c=e.Curve.toBSpline()
+	c.segment(e.FirstParameter,e.LastParameter)
+	return c
+
+def joinShape(shp):
+	bs = [ EdgeToBSpline(e) for e in shp.Edges ]
+
+	c=bs[0]
+
+	for b in bs[1:]:
+		if not c.join(b):
+			print("JoinFail")
+#			forcejoin(c,b)
+	return c.toShape()
 
 class ToBiArcs:
 	def __init__(self, obj):
 		obj.Proxy = self
 		obj.addProperty("App::PropertyLinkList", "Base", "Dimensions")
 		obj.addProperty("App::PropertyFloatConstraint", "Tolerance", "Dimensions").Tolerance=(0.01, 0.0, 1000.0, 0.01)
+		obj.addProperty("App::PropertyBool", "Join", "Dimensions").Join=True
 		obj.addProperty("App::PropertyBool", "ClaimChildren", "Dimensions").ClaimChildren=True
 
 	def onDocumentRestored(self, obj):
@@ -46,6 +71,8 @@ class ToBiArcs:
 		else:
 			c=c[0]
 
+		if obj.Join:
+			c = joinShape(c)
 		obj.Shape=c
 		return
 
