@@ -26,7 +26,7 @@ def fixPlacement(s,p):
 	return s
 
 def EdgeToBiArcs(Edge, tolerance=0.01):
-	if type(Edge.Curve) == Part.Line:
+	if type(Edge.Curve) in [ Part.Line, Part.Circle ]:
 		l=Edge.Curve.toNurbs(Edge.FirstParameter,Edge.LastParameter)
 		l = l.toBiArcs(tolerance)
 	else:
