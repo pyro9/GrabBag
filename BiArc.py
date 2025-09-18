@@ -31,7 +31,8 @@ def EdgeToBiArcs(Edge, tolerance=0.01):
 		l = l.toBiArcs(tolerance)
 	else:
 		l = Edge.Curve.toBiArcs(tolerance)
-	return Part.makeCompound(l)
+#	return Part.makeCompound(l)
+	return l
 
 def EdgeToBSpline(e):
 	try:
@@ -53,11 +54,18 @@ def joinShape(shp):
 #			forcejoin(c,b)
 	return c.toShape()
 
+def getRad(c):
+	if type(c) in [Part.Circle, Part.ArcOfCircle]:
+		return c.Radius
+	else:
+		return 1000000
+	
 class ToBiArcs:
 	def __init__(self, obj):
 		obj.Proxy = self
 		obj.addProperty("App::PropertyLinkList", "Base", "Dimensions")
 		obj.addProperty("App::PropertyFloatConstraint", "Tolerance", "Dimensions").Tolerance=(0.01, 0.0, 1000.0, 0.01)
+		obj.addProperty("App::PropertyBool", "Split", "Dimensions").Split=False
 		obj.addProperty("App::PropertyBool", "Join", "Dimensions").Join=True
 		obj.addProperty("App::PropertyBool", "ClaimChildren", "Dimensions").ClaimChildren=True
 
@@ -66,13 +74,20 @@ class ToBiArcs:
 
 	def execute(self, obj):
 		c = [ EdgeToBiArcs(e,obj.Tolerance) for e in obj.Base[0].Shape.Edges ]
-		if len(c)>1:
-			c = Part.makeCompound(c)
-		else:
-			c=c[0]
+		c = [ i for sub in c for i in sub ]	# combine the list of lists into a single list of elements
 
-		if obj.Join:
-			c = joinShape(c)
+		if obj.Split:
+			r = [ getRad(i) for i in c]
+			i=r.index(min(r))
+			r.sort()
+			print(r)
+			j = [ joinShape(Part.makeCompound(c[:i])), joinShape(Part.makeCompound(c[i:]))]
+			c=Part.makeCompound(j)
+		else:
+			c=Part.makeCompound(c)
+
+			if obj.Join:
+				c = joinShape(c)
 		obj.Shape=c
 		return
 
