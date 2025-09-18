@@ -89,6 +89,7 @@ class ToBiArcs:
 		if obj.Split and obj.NumRadii>0:
 			r = [ getRad(i) for i in c]
 			i=r.index(min(r))
+			r = list(dict.fromkeys(r))	# de-dup list
 			r.sort()
 			print(r[:3])
 			# just testing
