@@ -60,12 +60,22 @@ def getRad(c):
 	else:
 		return 1000000
 	
+def SegmentByRadius( l, radii):
+	i=j=0
+	while j<len(l):
+		while j<len(l) and not getRad(l[j]) in radii:
+			j+=1
+		yield l[i:j]
+		i=j
+		j+=1
+		
 class ToBiArcs:
 	def __init__(self, obj):
 		obj.Proxy = self
 		obj.addProperty("App::PropertyLinkList", "Base", "Dimensions")
 		obj.addProperty("App::PropertyFloatConstraint", "Tolerance", "Dimensions").Tolerance=(0.01, 0.0, 1000.0, 0.01)
 		obj.addProperty("App::PropertyBool", "Split", "Dimensions").Split=False
+		obj.addProperty("App::PropertyInteger", "NumRadii", "Dimensions").NumRadii=1
 		obj.addProperty("App::PropertyBool", "Join", "Dimensions").Join=True
 		obj.addProperty("App::PropertyBool", "ClaimChildren", "Dimensions").ClaimChildren=True
 
@@ -76,13 +86,19 @@ class ToBiArcs:
 		c = [ EdgeToBiArcs(e,obj.Tolerance) for e in obj.Base[0].Shape.Edges ]
 		c = [ i for sub in c for i in sub ]	# combine the list of lists into a single list of elements
 
-		if obj.Split:
+		if obj.Split and obj.NumRadii>0:
 			r = [ getRad(i) for i in c]
 			i=r.index(min(r))
 			r.sort()
-			print(r)
-			j = [ joinShape(Part.makeCompound(c[:i])), joinShape(Part.makeCompound(c[i:]))]
+			print(r[:3])
+			# just testing
+#			l2 = [ i for i in SegmentByRadius(c, [ min(r) ]) ]
+#			print(c, "\n=======\n",l2)
+
+			j = [ joinShape(Part.makeCompound(e)) for e in SegmentByRadius(c, r[:obj.NumRadii] ) ]
+			print(j)
 			c=Part.makeCompound(j)
+
 		else:
 			c=Part.makeCompound(c)
 
