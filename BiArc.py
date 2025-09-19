@@ -31,7 +31,6 @@ def EdgeToBiArcs(Edge, tolerance=0.01):
 		l = l.toBiArcs(tolerance)
 	else:
 		l = Edge.Curve.toBiArcs(tolerance)
-#	return Part.makeCompound(l)
 	return l
 
 def EdgeToBSpline(e):
@@ -59,13 +58,27 @@ def getRad(c):
 		return c.Radius
 	else:
 		return 1000000
-	
+
+def splitGeo(c):
+	a=c.copy()
+	b=c.copy()
+
+	a.setParameterRange(a.FirstParameter, (a.FirstParameter+a.LastParameter)/2)
+	b.setParameterRange(a.LastParameter, b.LastParameter)
+	return a,b
+
 def SegmentByRadius( l, radii):
 	i=j=0
 	while j<len(l):
 		while j<len(l) and not getRad(l[j]) in radii:
 			j+=1
-		yield l[i:j]
+		if(True and j<len(l)):
+			a,b = splitGeo(l[j])
+			l[j]=a
+			yield l[i:j+1]
+			l[j]=b
+		else:
+			yield l[i:j]
 		i=j
 		j+=1
 		
@@ -88,16 +101,10 @@ class ToBiArcs:
 
 		if obj.Split and obj.NumRadii>0:
 			r = [ getRad(i) for i in c]
-			i=r.index(min(r))
 			r = list(dict.fromkeys(r))	# de-dup list
 			r.sort()
-			print(r[:3])
-			# just testing
-#			l2 = [ i for i in SegmentByRadius(c, [ min(r) ]) ]
-#			print(c, "\n=======\n",l2)
 
 			j = [ joinShape(Part.makeCompound(e)) for e in SegmentByRadius(c, r[:obj.NumRadii] ) ]
-			print(j)
 			c=Part.makeCompound(j)
 
 		else:
