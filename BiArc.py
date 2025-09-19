@@ -116,6 +116,8 @@ class ToBiArcs:
 		return
 
 	def onChanged(self, obj, name):
+		if name in ['NumRadii', 'Tolerance']:
+			obj.recompute(False)
 		pass
 #		print("onChanged", name)
 		
