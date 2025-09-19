@@ -35,7 +35,7 @@ def computeRadial(v0, v1, line, angle):
 	return line.End
 
 
-def MakeHelix(path, pitch, radius, cont=0, rotation=0, direction=1):
+def MakeHelix(path, pitch, radius, cont=0, rotation=0, direction=1, join=False):
 	PathDistance=path.Length*4/pitch	# 4 sample points per turn
 	print("distance=",PathDistance)
 	pathPoints = path.discretize(Distance=path.Length/PathDistance)
@@ -62,13 +62,21 @@ def MakeHelix(path, pitch, radius, cont=0, rotation=0, direction=1):
 			arcs.append(Part.Arc(radialPoints[i], radialPoints[i+1], radialPoints[i+2]))
 		except:
 			pass
+
+	radialLine.Document.removeObject(radialLine.Name)
+
+	if join:
+		bs = [ a.toBSpline(a.FirstParameter, a.LastParameter) for a in arcs ]
+		b = bs[0]
+		[ b.join(e) for e in bs[1:] ]
+		return b.toShape()
+
 	print("points:", radialPoints)
 	shp=Part.Shape(arcs)
 	print(shp)
 	print(shp.Edges)
 	w = Part.Wire(shp.Edges)
 	print("W=",w)
-	radialLine.Document.removeObject(radialLine.Name)
 
 	return w
 
@@ -91,16 +99,19 @@ class PathHelix:
 		obj.addProperty("App::PropertyLink", "Spine", "Dimensions")
 		obj.addProperty("App::PropertyBool", "ExtraHalf", "Dimensions").ExtraHalf=False
 		obj.addProperty("App::PropertyBool", "Reverse", "Dimensions").Reverse=False
+		obj.addProperty("App::PropertyBool", "Join", "Dimensions").Join=True
 
 
 	def onDocumentRestored(self, obj):
 		if (not hasattr(obj,"Reverse")):
 			obj.addProperty("App::PropertyBool", "Reverse", "Dimensions").Reverse=False
 		obj.ViewObject.Proxy.fp = obj
+		if (not hasattr(obj,"Join")):
+			obj.addProperty("App::PropertyBool", "Join", "Dimensions").Join=False
 
 	def execute(self, obj):
 		print("Spine=", obj.Spine.Shape)
-		w = MakeHelix(obj.Spine.Shape, obj.Pitch, obj.Radius, rotation=obj.Rotation, cont=2 if(obj.ExtraHalf) else 0, direction= -1 if(obj.Reverse) else 1)
+		w = MakeHelix(obj.Spine.Shape, obj.Pitch, obj.Radius, rotation=obj.Rotation, cont=2 if(obj.ExtraHalf) else 0, direction= -1 if(obj.Reverse) else 1, join=obj.Join)
 #		w.Placement = obj.Placement
 		obj.Shape=w
 #		Part.show(obj.Shape)
