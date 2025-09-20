@@ -126,6 +126,13 @@ def SegmentByRadius( l, radii):
 			yield l[i:j]
 		i=j
 		j+=1
+
+def makeCumulative(l):
+	acc=0
+
+	for i in l:
+		acc+=i
+		yield acc
 		
 class ToBiArcs:
 	def __init__(self, obj):
@@ -137,6 +144,7 @@ class ToBiArcs:
 		obj.addProperty("App::PropertyFloatList", "SplitDistances", "Split").SplitDistances=[ 75.0, 65.0 ]
 		obj.addProperty("App::PropertyFloatConstraint", "SplitDistance", "Split").SplitDistance= (0.0, 0.0, 100000000000, 0.1)	# value, min, max, step
 		obj.addProperty("App::PropertyInteger", "NumRadii", "Split").NumRadii=1
+		obj.addProperty("App::PropertyFloatList", "RadiusSplits", "Split").RadiusSplits=[]
 		obj.addProperty("App::PropertyBool", "ClaimChildren", "Dimensions").ClaimChildren=True
 
 	def onDocumentRestored(self, obj):
@@ -166,6 +174,8 @@ class ToBiArcs:
 
 			j = [ joinShape(Part.makeCompound(e)) for e in SegmentByRadius(c, r[:obj.NumRadii] ) ]
 			c=Part.makeCompound(j)
+			l=[ i.Length for i in c.Edges ]
+			obj.RadiusSplits = [ i for i in makeCumulative(l[:-1])] if len(l)>1 else []
 
 		elif 'Join' in obj.Mode:
 			c=Part.makeCompound(c)
