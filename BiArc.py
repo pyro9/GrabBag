@@ -132,11 +132,11 @@ class ToBiArcs:
 		obj.Proxy = self
 		obj.addProperty("App::PropertyLinkList", "Base", "Dimensions")
 		obj.addProperty("App::PropertyFloatConstraint", "Tolerance", "Dimensions").Tolerance=(0.01, 0.0, 1000.0, 0.01)
-		obj.addProperty("App::PropertyBool", "Split", "Dimensions").Split=False
-		obj.addProperty("App::PropertyFloatList", "SplitDistances", "Dimensions").SplitDistances=[ 75.0, 65.0 ]
-		obj.addProperty("App::PropertyFloatConstraint", "SplitDistance", "Dimensions").SplitDistance= (0.0, 0.0, 100000000000, 0.1)	# value, min, max, step
-		obj.addProperty("App::PropertyInteger", "NumRadii", "Dimensions").NumRadii=1
-		obj.addProperty("App::PropertyBool", "Join", "Dimensions").Join=True
+		obj.addProperty("App::PropertyEnumeration", "Mode", "Split").Mode=['Nothing', 'Just Join', 'Split by Distance', 'Split by Radii']
+		obj.Mode=1
+		obj.addProperty("App::PropertyFloatList", "SplitDistances", "Split").SplitDistances=[ 75.0, 65.0 ]
+		obj.addProperty("App::PropertyFloatConstraint", "SplitDistance", "Split").SplitDistance= (0.0, 0.0, 100000000000, 0.1)	# value, min, max, step
+		obj.addProperty("App::PropertyInteger", "NumRadii", "Split").NumRadii=1
 		obj.addProperty("App::PropertyBool", "ClaimChildren", "Dimensions").ClaimChildren=True
 
 	def onDocumentRestored(self, obj):
@@ -147,7 +147,8 @@ class ToBiArcs:
 		c = [ i for sub in c for i in sub ]	# combine the list of lists into a single list of elements
 
 		# a dirty test, ignore all properties nd just do the length split!
-		if True:
+
+		if 'Distance' in obj.Mode:
 			dlist=obj.SplitDistances.copy()
 			if obj.SplitDistance:
 				dlist.append( obj.SplitDistance)
@@ -158,10 +159,7 @@ class ToBiArcs:
 			j = [ joinShape(Part.makeCompound(e)) for e in SegmentByLength(c, dlist ) ]
 			print(j)
 			c=Part.makeCompound(j)
-			obj.Shape=c
-			return
-
-		if obj.Split and obj.NumRadii>0:
+		elif 'Radii' in obj.Mode and obj.NumRadii>0:
 			r = [ getRad(i) for i in c]
 			r = list(dict.fromkeys(r))	# de-dup list
 			r.sort()
@@ -169,11 +167,12 @@ class ToBiArcs:
 			j = [ joinShape(Part.makeCompound(e)) for e in SegmentByRadius(c, r[:obj.NumRadii] ) ]
 			c=Part.makeCompound(j)
 
+		elif 'Join' in obj.Mode:
+			c=Part.makeCompound(c)
+			c = joinShape(c)
 		else:
 			c=Part.makeCompound(c)
 
-			if obj.Join:
-				c = joinShape(c)
 		obj.Shape=c
 		return
 
