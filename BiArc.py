@@ -67,8 +67,53 @@ def splitGeo(c):
 	b.setParameterRange(a.LastParameter, b.LastParameter)
 	return a,b
 
+def splitGeoByLen(c,l):
+	a=c.copy()
+	b=c.copy()
+
+	r=a.LastParameter-a.FirstParameter
+	l=l/a.length()
+	r*=l
+	r+=a.FirstParameter
+
+	print("splitGeoByLen: ", a.FirstParameter, r, b.LastParameter)
+	a.setParameterRange(a.FirstParameter, r)
+	b.setParameterRange(r, b.LastParameter)
+	return a,b
+
+def SegmentByLength(l, lenlist):	# lenlist must be sorted in reverse order
+	i=j=0
+	curlen=0
+	cmplen=0
+
+	print("SegmentByLength j=",j)
+	while j<len(l):
+		if not cmplen:
+			try:
+				cmplen=lenlist.pop()
+			except:
+				yield l[i:]
+				return
+
+		if curlen+l[j].length()>cmplen:
+			a,b = splitGeoByLen(l[j], cmplen-curlen)
+			l[j]=a
+			yield l[i:j+1]
+			curlen+= a.length()	# b's length will be added below
+			print("SegmentByLength j=",j)
+			i=j
+			l[j]=b
+			cmplen=0	# cause pop of new cmplen
+		elif cmplen+l[j].length()==length:
+			yield l[i:j+1]
+			i=j+1
+
+		curlen+= l[j].length()
+		j+=1
+			
 def SegmentByRadius( l, radii):
 	i=j=0
+	curlen=0
 	while j<len(l):
 		while j<len(l) and not getRad(l[j]) in radii:
 			j+=1
@@ -88,6 +133,8 @@ class ToBiArcs:
 		obj.addProperty("App::PropertyLinkList", "Base", "Dimensions")
 		obj.addProperty("App::PropertyFloatConstraint", "Tolerance", "Dimensions").Tolerance=(0.01, 0.0, 1000.0, 0.01)
 		obj.addProperty("App::PropertyBool", "Split", "Dimensions").Split=False
+		obj.addProperty("App::PropertyFloatList", "SplitDistances", "Dimensions").SplitDistances=[ 75.0, 65.0 ]
+		obj.addProperty("App::PropertyFloatConstraint", "SplitDistance", "Dimensions").SplitDistance= (0.0, 0.0, 100000000000, 0.1)	# value, min, max, step
 		obj.addProperty("App::PropertyInteger", "NumRadii", "Dimensions").NumRadii=1
 		obj.addProperty("App::PropertyBool", "Join", "Dimensions").Join=True
 		obj.addProperty("App::PropertyBool", "ClaimChildren", "Dimensions").ClaimChildren=True
@@ -98,6 +145,21 @@ class ToBiArcs:
 	def execute(self, obj):
 		c = [ EdgeToBiArcs(e,obj.Tolerance) for e in obj.Base[0].Shape.Edges ]
 		c = [ i for sub in c for i in sub ]	# combine the list of lists into a single list of elements
+
+		# a dirty test, ignore all properties nd just do the length split!
+		if True:
+			dlist=obj.SplitDistances.copy()
+			if obj.SplitDistance:
+				dlist.append( obj.SplitDistance)
+			dlist=list(set(dlist))
+			dlist.sort()
+			dlist.reverse()
+			print("dlist=",dlist)
+			j = [ joinShape(Part.makeCompound(e)) for e in SegmentByLength(c, dlist ) ]
+			print(j)
+			c=Part.makeCompound(j)
+			obj.Shape=c
+			return
 
 		if obj.Split and obj.NumRadii>0:
 			r = [ getRad(i) for i in c]
@@ -116,7 +178,7 @@ class ToBiArcs:
 		return
 
 	def onChanged(self, obj, name):
-		if name in ['NumRadii', 'Tolerance']:
+		if name in ['NumRadii', 'Tolerance', 'SplitDistance']:
 			obj.recompute(False)
 		pass
 #		print("onChanged", name)
@@ -137,6 +199,10 @@ class ViewProviderToBiArcs:
         """
         return
 
+    def doubleClicked(self, obj):
+        print("doubleClicked\n")
+        return True	# return True if handled, False to fall through
+    
     def updateData(self, fp, prop):
         """
         If a property of the handled feature has changed we have the chance to handle this here
