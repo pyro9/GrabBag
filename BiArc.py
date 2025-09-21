@@ -68,8 +68,8 @@ def splitGeo(c):
 	return a,b
 
 def splitGeoByLen(c,l):
-	if(l<=0)
-		raise Exception("BUG! can't splitGeoByLen by <=0 length!"(
+	if(l<=0):
+		raise Exception("BUG! can't splitGeoByLen by <=0 length!")
 
 	a=c.copy()
 	b=c.copy()
