@@ -152,6 +152,7 @@ class ToBiArcs:
 		obj.Mode=1
 		obj.addProperty("App::PropertyFloatList", "SplitDistances", "Split").SplitDistances=[ ]
 		obj.addProperty("App::PropertyFloatConstraint", "SplitDistance", "Split").SplitDistance= (0.0, 0.0, 100000000000, 0.1)	# value, min, max, step
+		obj.addProperty("App::PropertyBool", "AddDistance", "Split").AddDistance=False
 		obj.addProperty("App::PropertyInteger", "NumRadii", "Split").NumRadii=1
 		obj.addProperty("App::PropertyFloatList", "RadiusSplits", "Split").RadiusSplits=[]
 		obj.addProperty("App::PropertyBool", "ClaimChildren", "Dimensions").ClaimChildren=True
@@ -196,6 +197,13 @@ class ToBiArcs:
 		return
 
 	def onChanged(self, obj, name):
+		if name == 'AddDistance':
+			if obj.AddDistance:
+				l=obj.SplitDistances
+				l.append(obj.SplitDistance)
+				obj.SplitDistances = l
+				obj.AddDistance=False
+				print("Added")
 		if name in ['NumRadii', 'Tolerance', 'SplitDistance']:
 			obj.recompute(False)
 		pass
