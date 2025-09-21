@@ -1,4 +1,4 @@
-#   Copyright (c) 2024 Steven James <pyro@4axisprinting.com>        
+#   Copyright (c) 2025 Steven James <pyro@4axisprinting.com>        
 #                                                                         
 #   This library is free software; you can redistribute it and/or
 #   modify it under the terms of the GNU Library General Public
@@ -79,11 +79,11 @@ def splitGeoByLen(c,l):
 	r*=l
 	r+=a.FirstParameter
 
-	print("splitGeoByLen: ", a.FirstParameter, r, b.LastParameter)
+#	print("splitGeoByLen: ", a.FirstParameter, r, b.LastParameter)
 	if type(c) in [Part.LineSegment,Part.BSplineCurve ]:
 		a = a.toNurbs(a.FirstParameter,r)
 		b = b.toNurbs(r, b.LastParameter)
-		print("type b=",type(b))
+#		print("type b=",type(b))
 	else:
 		a.setParameterRange(a.FirstParameter, r)
 		b.setParameterRange(r, b.LastParameter)
@@ -173,9 +173,9 @@ class ToBiArcs:
 			dlist=list(set(dlist))
 			dlist.sort()
 			dlist.reverse()
-			print("dlist=",dlist)
+#			print("dlist=",dlist)
 			j = [ joinShape(Part.makeCompound(e)) for e in SegmentByLength(c, dlist ) ]
-			print(j)
+#			print(j)
 			c=Part.makeCompound(j)
 		elif 'Radii' in obj.Mode and obj.NumRadii>0:
 			r = [ getRad(i) for i in c]
@@ -203,7 +203,7 @@ class ToBiArcs:
 				l.append(obj.SplitDistance)
 				obj.SplitDistances = l
 				obj.AddDistance=False
-				print("Added")
+#				print("Added")
 		if name in ['NumRadii', 'Tolerance', 'SplitDistance']:
 			obj.recompute(False)
 		pass
