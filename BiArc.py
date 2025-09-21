@@ -27,7 +27,7 @@ def fixPlacement(s,p):
 
 def EdgeToBiArcs(Edge, tolerance=0.01):
 	if type(Edge.Curve) in [ Part.Line, Part.Circle ]:
-		l=Edge.Curve.toNurbs(Edge.FirstParameter,Edge.LastParameter)
+		l=  Edge.Curve.toNurbs(Edge.FirstParameter,Edge.LastParameter)
 		l = l.toBiArcs(tolerance)
 	else:
 		l = Edge.Curve.toBiArcs(tolerance)
@@ -68,6 +68,9 @@ def splitGeo(c):
 	return a,b
 
 def splitGeoByLen(c,l):
+	if(l<=0)
+		raise Exception("BUG! can't splitGeoByLen by <=0 length!"(
+
 	a=c.copy()
 	b=c.copy()
 
@@ -77,8 +80,13 @@ def splitGeoByLen(c,l):
 	r+=a.FirstParameter
 
 	print("splitGeoByLen: ", a.FirstParameter, r, b.LastParameter)
-	a.setParameterRange(a.FirstParameter, r)
-	b.setParameterRange(r, b.LastParameter)
+	if type(c) in [Part.LineSegment,Part.BSplineCurve ]:
+		a = a.toNurbs(a.FirstParameter,r)
+		b = b.toNurbs(r, b.LastParameter)
+		print("type b=",type(b))
+	else:
+		a.setParameterRange(a.FirstParameter, r)
+		b.setParameterRange(r, b.LastParameter)
 	return a,b
 
 def SegmentByLength(l, lenlist):	# lenlist must be sorted in reverse order
@@ -86,7 +94,6 @@ def SegmentByLength(l, lenlist):	# lenlist must be sorted in reverse order
 	curlen=0
 	cmplen=0
 
-	print("SegmentByLength j=",j)
 	while j<len(l):
 		if not cmplen:
 			try:
@@ -100,16 +107,18 @@ def SegmentByLength(l, lenlist):	# lenlist must be sorted in reverse order
 			l[j]=a
 			yield l[i:j+1]
 			curlen+= a.length()	# b's length will be added below
-			print("SegmentByLength j=",j)
 			i=j
 			l[j]=b
 			cmplen=0	# cause pop of new cmplen
-		elif cmplen+l[j].length()==length:
+			continue	# re-asess the second part of the curve in case it's long enough to go past the next length
+		elif cmplen+l[j].length()==cmplen:
 			yield l[i:j+1]
 			i=j+1
 
 		curlen+= l[j].length()
 		j+=1
+
+	yield l[-1]
 			
 def SegmentByRadius( l, radii):
 	i=j=0
@@ -141,7 +150,7 @@ class ToBiArcs:
 		obj.addProperty("App::PropertyFloatConstraint", "Tolerance", "Dimensions").Tolerance=(0.01, 0.0, 1000.0, 0.01)
 		obj.addProperty("App::PropertyEnumeration", "Mode", "Split").Mode=['Nothing', 'Just Join', 'Split by Distance', 'Split by Radii']
 		obj.Mode=1
-		obj.addProperty("App::PropertyFloatList", "SplitDistances", "Split").SplitDistances=[ 75.0, 65.0 ]
+		obj.addProperty("App::PropertyFloatList", "SplitDistances", "Split").SplitDistances=[ ]
 		obj.addProperty("App::PropertyFloatConstraint", "SplitDistance", "Split").SplitDistance= (0.0, 0.0, 100000000000, 0.1)	# value, min, max, step
 		obj.addProperty("App::PropertyInteger", "NumRadii", "Split").NumRadii=1
 		obj.addProperty("App::PropertyFloatList", "RadiusSplits", "Split").RadiusSplits=[]
