@@ -143,6 +143,14 @@ def makeCumulative(l):
 		acc+=i
 		yield acc
 		
+def forceRange(val, rnge):
+	while val<0:
+		val+=rnge
+	while val >= rnge:
+		val -= rnge
+
+	return val
+
 def joinEdges(l):
 	if not l:
 		return None
@@ -157,6 +165,13 @@ def joinEdges(l):
 
 	return r.toShape()
 
+def moveStart(e,d):
+	p=e.getParameterByLength(d)
+	el = e.split(p).Edges
+	el = [ e.reversed() for e in el]
+	s=joinEdges(el)
+	return s.Edge1
+
 #def DistanceToParam(edge, distance):
 #	rnge = edge.LastParameter-edge.FirstParameter
 #
@@ -170,6 +185,8 @@ class Recompose:
 		obj.addProperty("App::PropertyFloatConstraint", "Tolerance", "Dimensions").Tolerance=(0.01, 0.0, 1000.0, 0.01)
 		obj.addProperty("App::PropertyEnumeration", "Mode", "Split").Mode=['Nothing', 'Just Join', 'Split by Distance', 'Split by Radii']
 		obj.Mode=1
+
+		obj.addProperty("App::PropertyFloatConstraint", "Start", "Dimensions").Start=(0.0, 0.0, 1000.0, 0.1)
 		obj.addProperty("App::PropertyFloatList", "SplitDistances", "Split").SplitDistances=[ ]
 		obj.addProperty("App::PropertyFloatConstraint", "SplitDistance", "Split").SplitDistance= (0.0, 0.0, 100000000000, 0.1)	# value, min, max, step
 		obj.addProperty("App::PropertyBool", "AddDistance", "Split").AddDistance=False
@@ -185,15 +202,28 @@ class Recompose:
 		if not s:
 			raise Exception("{obj.Name}:Can't join")
 
+		if obj.Start:
+			e=moveStart(s.Edge1, obj.Start)
+		else:
+			e=s.Edge1
+
 		if obj.SplitDistance:
 			p = e.getParameterByLength(obj.SplitDistance)
 			w = e.split(p)
 			obj.Shape=w
-			# dumb test
-			l= [ e.reversed() for e in w.Edges]
-			obj.Shape = joinEdges(l)
 		else:
-			obj.Shape=s
+			obj.Shape=e
+
+#		if obj.SplitDistances:
+#			e=moveStart(s.Edge1, obj.SplitDistances[0])
+#			if len(obj.SplitDistances) >1:
+#				d= [ i-obj.SplitDistances[0] for i in obj.SplitDistances[1:] ]
+#				ps = [ e.getParameterByLength(i) for i in d ]
+#				w=e.split(ps)
+#				obj.Shape = w
+#			else:
+#				obj.Shape=e
+#			
 		return
 
 		c = [ EdgeToBiArcs(e,obj.Tolerance) for e in obj.Base[0].Shape.Edges ]
@@ -239,7 +269,16 @@ class Recompose:
 				obj.SplitDistances = l
 				obj.AddDistance=False
 #				print("Added")
-		if name in ['NumRadii', 'Tolerance', 'SplitDistance']:
+		if name == 'SplitDistance':	# keep SplitDistance between 0 and the length of the Base edge
+			v = forceRange(obj.SplitDistance,obj.Base[0].Shape.Edge1.Length)
+			if obj.SplitDistance != v:
+				obj.SplitDistance = v
+		if name == 'Start':	# keep SplitDistance between 0 and the length of the Base edge
+			v = forceRange(obj.Start,obj.Base[0].Shape.Edge1.Length)
+			if obj.Start != v:
+				obj.Start = v
+
+		if name in ['Start', 'NumRadii', 'Tolerance', 'SplitDistance']:
 			obj.recompute(False)
 		pass
 #		print("onChanged", name)
