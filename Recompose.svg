@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:osb="http://www.openswatchbook.org/uri/2009/osb"
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="64"
+   height="64"
+   viewBox="0 0 16.933333 16.933334"
+   version="1.1"
+   id="svg8"
+   sodipodi:docname="ToBiArc.svg"
+   inkscape:version="0.92.5 (2060ec1f9f, 2020-04-08)">
+  <metadata
+     id="metadata14">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs12">
+    <linearGradient
+       inkscape:collect="always"
+       id="linearGradient6103">
+      <stop
+         style="stop-color:#c00000;stop-opacity:1;"
+         offset="0"
+         id="stop6099" />
+      <stop
+         style="stop-color:#c00000;stop-opacity:0;"
+         offset="1"
+         id="stop6101" />
+    </linearGradient>
+    <linearGradient
+       inkscape:collect="always"
+       id="linearGradient6091">
+      <stop
+         style="stop-color:#85e915;stop-opacity:1;"
+         offset="0"
+         id="stop6087" />
+      <stop
+         style="stop-color:#85e915;stop-opacity:0;"
+         offset="1"
+         id="stop6089" />
+    </linearGradient>
+    <linearGradient
+       inkscape:collect="always"
+       id="linearGradient6069"
+       osb:paint="gradient">
+      <stop
+         style="stop-color:#00e900;stop-opacity:1;"
+         offset="0"
+         id="stop6065" />
+      <stop
+         style="stop-color:#000000;stop-opacity:0;"
+         offset="1"
+         id="stop6067" />
+    </linearGradient>
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient6091"
+       id="linearGradient6097"
+       x1="-32.939014"
+       y1="16.294506"
+       x2="0.35000035"
+       y2="16.294506"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(0.24872238,0,0,0.24872238,-24.759401,-24.74634)" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient6103"
+       id="linearGradient6105"
+       x1="-0.34999999"
+       y1="-16.294504"
+       x2="32.938999"
+       y2="-16.294504"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(0.24872238,0,0,0.24872238,-24.759401,-24.74634)" />
+  </defs>
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1920"
+     inkscape:window-height="998"
+     id="namedview10"
+     showgrid="false"
+     units="px"
+     inkscape:zoom="1.9715996"
+     inkscape:cx="111.54462"
+     inkscape:cy="89.278055"
+     inkscape:window-x="0"
+     inkscape:window-y="30"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="Part__Part2DObjectPython" />
+  <g
+     id="Part__Part2DObjectPython"
+     transform="matrix(1,0,0,-1,33.258477,-16.307802)">
+    <path
+       style="fill:url(#linearGradient6105);fill-opacity:1;fill-rule:evenodd;stroke:#0bc000;stroke-width:0.17410566;stroke-linecap:square;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="m -24.759401,-24.74634 c 4.476607,0 8.105613,-3.629006 8.105613,-8.105613 l -8.105613,-2e-6 v 8.105615"
+       id="path4538"
+       inkscape:connector-curvature="0" />
+    <path
+       style="fill:none;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:0.17412744;stroke-linecap:square;stroke-miterlimit:4;stroke-dasharray:1.0447646, 0.17412743;stroke-dashoffset:0.35004377"
+       d="m -32.86933,-24.746339 16.219858,-1e-6"
+       id="Part__Part2DObjectPython_w0001"
+       inkscape:connector-curvature="0" />
+    <path
+       style="display:inline;fill:url(#linearGradient6097);fill-opacity:1;fill-rule:evenodd;stroke:#c00000;stroke-width:0.17412744;stroke-linecap:square;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="m -24.759401,-24.74634 -8e-6,8.105609 -8.105609,8e-6 c 0,-4.476609 3.629009,-8.105618 8.105617,-8.105617"
+       id="path6055"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="cccc" />
+    <title
+       id="title5">b'Part__Part2DObjectPython'</title>
+  </g>
+</svg>
