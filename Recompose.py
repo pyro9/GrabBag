@@ -33,15 +33,6 @@ def EdgeToBiArcs(Edge, tolerance=0.01):
 		l = Edge.Curve.toBiArcs(tolerance)
 	return l
 
-def EdgeToBSpline(e):
-	try:
-		c=e.toNurbs().Edge1.Curve
-	except:
-		print("Nurbs Fail")
-		c=e.Curve.toBSpline()
-	c.segment(e.FirstParameter,e.LastParameter)
-	return c
-
 def joinShape(shp):
 	bs = [ EdgeToBSpline(e) for e in shp.Edges ]
 
@@ -224,19 +215,19 @@ def getRadii(edge, tr, tolerance=0.01):
 class Recompose:
 	def __init__(self, obj):
 		obj.Proxy = self
-		obj.addProperty("App::PropertyLinkList", "Base", "Dimensions")
+		obj.addProperty("App::PropertyLinkList", "Base", "Base")
 		obj.addProperty("App::PropertyBool", "ClaimChildren", "Dimensions").ClaimChildren=True
 		obj.addProperty("App::PropertyFloatConstraint", "Tolerance", "Dimensions").Tolerance=(0.01, 0.0, 1000.0, 0.01)
 		obj.addProperty("App::PropertyFloatConstraint", "Start", "Dimensions").Start=(0.0, 0.0, 1000.0, 0.1)
 
-		obj.addProperty("App::PropertyEnumeration", "Mode", "Split").Mode=['Nothing', 'Just Join', 'Split by Distance', 'Split by Radii']
+		obj.addProperty("App::PropertyEnumeration", "Mode", "Base").Mode=['Nothing', 'Just Join', 'Split by Distance', 'Split by Radii']
 		obj.Mode=1
 
-		obj.addProperty("App::PropertyFloatList", "SplitDistances", "Split").SplitDistances=[ ]
-		obj.addProperty("App::PropertyFloatConstraint", "SplitDistance", "Split").SplitDistance= (0.0, 0.0, 100000000000, 0.1)	# value, min, max, step
-		obj.addProperty("App::PropertyBool", "AddDistance", "Split").AddDistance=False
-		obj.addProperty("App::PropertyFloatConstraint", "Threshold", "Split").Threshold=( 0.0, 0.0, 10000.0, 0.1)
-		obj.addProperty("App::PropertyFloatList", "RadiusSplits", "Split").RadiusSplits=[]
+		obj.addProperty("App::PropertyFloatList", "SplitDistances", "Distance").SplitDistances=[ ]
+		obj.addProperty("App::PropertyFloatConstraint", "SplitDistance", "Distance").SplitDistance= (0.0, 0.0, 100000000000, 0.1)	# value, min, max, step
+		obj.addProperty("App::PropertyBool", "AddDistance", "Distance").AddDistance=False
+		obj.addProperty("App::PropertyFloatConstraint", "Threshold", "Radius").Threshold=( 0.0, 0.0, 10000.0, 0.1)
+		obj.addProperty("App::PropertyFloatList", "RadiusSplits", "Radius").RadiusSplits=[]
 
 	def onDocumentRestored(self, obj):
 		pass
@@ -252,65 +243,24 @@ class Recompose:
 			e=s.Edge1
 
 		if obj.SplitDistance:
-			p = e.getParameterByLength(obj.SplitDistance)
-			w = e.split(p)
-			obj.Shape=w
+			p = [e.getParameterByLength(obj.SplitDistance)]
 		else:
-			obj.Shape=e
+			p=[]
 
-#		if obj.SplitDistances:
-#			e=moveStart(s.Edge1, obj.SplitDistances[0])
-#			if len(obj.SplitDistances) >1:
-#				d= [ i-obj.SplitDistances[0] for i in obj.SplitDistances[1:] ]
-#				ps = [ e.getParameterByLength(i) for i in d ]
-#				w=e.split(ps)
-#				obj.Shape = w
-#			else:
-#				obj.Shape=e
-#			
+		if obj.SplitDistances:
+			params = [ e.getParameterByLength(i) for i in obj.SplitDistances ]
+			p = p + params
+
 		if obj.Threshold:
 			obj.RadiusSplits = getRadii(e, obj.Threshold)
 			params = [ e.getParameterByLength(i) for i in obj.RadiusSplits ]
+			p = p + params
 			print("params=", params)
-			w = e.split(params)
-			print("w=", w)
-			obj.Shape = w
-		return
 
-		c = [ EdgeToBiArcs(e,obj.Tolerance) for e in obj.Base[0].Shape.Edges ]
-		c = [ i for sub in c for i in sub ]	# combine the list of lists into a single list of elements
-
-		# a dirty test, ignore all properties nd just do the length split!
-
-		if 'Distance' in obj.Mode:
-			dlist=obj.SplitDistances.copy()
-			if obj.SplitDistance:
-				dlist.append( obj.SplitDistance)
-			dlist=list(set(dlist))
-			dlist.sort()
-			dlist.reverse()
-#			print("dlist=",dlist)
-			j = [ joinShape(Part.makeCompound(e)) for e in SegmentByLength(c, dlist ) ]
-#			print(j)
-			c=Part.makeCompound(j)
-		elif 'Radii' in obj.Mode and obj.NumRadii>0:
-			r = [ getRad(i) for i in c]
-			r = list(dict.fromkeys(r))	# de-dup list
-			r.sort()
-
-			j = [ joinShape(Part.makeCompound(e)) for e in SegmentByRadius(c, r[:obj.NumRadii] ) ]
-			c=Part.makeCompound(j)
-			l=[ i.Length for i in c.Edges ]
-			obj.RadiusSplits = [ i for i in makeCumulative(l[:-1])] if len(l)>1 else []
-
-		elif 'Join' in obj.Mode:
-			c=Part.makeCompound(c)
-			c = joinShape(c)
-		else:
-			c=Part.makeCompound(c)
-
-		obj.Shape=c
-		return
+		p = list(set(p))
+		w = e.split(p)
+		print("w=", w)
+		obj.Shape = w
 
 	def onChanged(self, obj, name):
 		if name == 'AddDistance':
