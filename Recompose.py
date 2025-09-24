@@ -122,8 +122,8 @@ class Recompose:
 		obj.addProperty("App::PropertyFloatConstraint", "Tolerance", "Dimensions").Tolerance=(0.01, 0.0, 1000.0, 0.01)
 		obj.addProperty("App::PropertyFloatConstraint", "Start", "Dimensions").Start=(0.0, 0.0, 1000.0, 0.1)
 
-		obj.addProperty("App::PropertyEnumeration", "Mode", "Base").Mode=['Nothing', 'Just Join', 'Split by Distance', 'Split by Radii']
-		obj.Mode=1
+		obj.addProperty("App::PropertyEnumeration", "Mode", "Base").Mode=['BiArcs', 'Just Join', 'Normal' ]
+		obj.Mode=2
 
 		obj.addProperty("App::PropertyFloatList", "SplitDistances", "Distance").SplitDistances=[ ]
 		obj.addProperty("App::PropertyFloatConstraint", "SplitDistance", "Distance").SplitDistance= (0.0, 0.0, 100000000000, 0.1)	# value, min, max, step
@@ -137,12 +137,21 @@ class Recompose:
 	def execute(self, obj):
 		s = joinEdges( obj.Base[0].Shape.Edges)
 		if not s:
-			raise Exception("{obj.Name}:Can't join")
+			raise Exception(f"{obj.Name}:Can't join")
 
 		if obj.Start:
 			e=moveStart(s.Edge1, obj.Start)
 		else:
 			e=s.Edge1
+
+		if 'Join' in obj.Mode:
+			obj.Shape=e
+			return
+
+		if 'BiArcs' in obj.Mode:
+			c = EdgeToBiArcs(e,obj.Tolerance) # c, a list of all biArcs
+			obj.Shape = Part.makeCompound(c)
+			return
 
 		if obj.SplitDistance:
 			p = [e.getParameterByLength(obj.SplitDistance)]
@@ -161,7 +170,7 @@ class Recompose:
 
 		p = list(set(p))
 		w = e.split(p)
-		print("w=", w)
+#		print("w=", w)
 		obj.Shape = w
 
 	def onChanged(self, obj, name):
