@@ -53,12 +53,6 @@ def joinShape(shp):
 #			forcejoin(c,b)
 	return c.toShape()
 
-def getRad(c):
-	if type(c) in [Part.Circle, Part.ArcOfCircle]:
-		return c.Radius
-	else:
-		return 1000000
-
 def splitGeo(c):
 	a=c.copy()
 	b=c.copy()
@@ -172,6 +166,55 @@ def moveStart(e,d):
 	s=joinEdges(el)
 	return s.Edge1
 
+def getRad(c):
+	if type(c) in [Part.Circle, Part.ArcOfCircle]:
+		return c.Radius
+	else:
+		return 1000000
+
+def getStartDistances(l):
+	acc=0
+
+	for e in l:
+		yield(acc)
+		acc+= e.length()
+
+def getLength(l):
+	acc=0
+	for e in l:
+		acc+=e.length()
+	return acc
+
+def getRadii(edge, tr, tolerance=0.01):
+	"""
+	given an edge and a radius threshold, return a list of
+	distances where the radius is smallest.
+	"""
+	c = EdgeToBiArcs(edge,tolerance) # c, a list of all biArcs
+
+	active=False
+	regions=[]
+	i=j=k=0
+	for k,e in enumerate(c):
+		if getRad(e) <tr:
+			if not active:
+				i=k
+				active=True
+		else:
+			if active:
+				j=k
+				regions.append( (i,j) )
+				active = False
+
+	dists = [ i for i in getStartDistances(c) ]	# a corresponding list of all distances from the start of the edge
+
+	distances=[]
+	for i,j in regions:
+		l = getLength(c[i:j])
+		distances.append(l/2 + dists[i])
+
+	return distances
+
 #def DistanceToParam(edge, distance):
 #	rnge = edge.LastParameter-edge.FirstParameter
 #
@@ -182,17 +225,18 @@ class Recompose:
 	def __init__(self, obj):
 		obj.Proxy = self
 		obj.addProperty("App::PropertyLinkList", "Base", "Dimensions")
+		obj.addProperty("App::PropertyBool", "ClaimChildren", "Dimensions").ClaimChildren=True
 		obj.addProperty("App::PropertyFloatConstraint", "Tolerance", "Dimensions").Tolerance=(0.01, 0.0, 1000.0, 0.01)
+		obj.addProperty("App::PropertyFloatConstraint", "Start", "Dimensions").Start=(0.0, 0.0, 1000.0, 0.1)
+
 		obj.addProperty("App::PropertyEnumeration", "Mode", "Split").Mode=['Nothing', 'Just Join', 'Split by Distance', 'Split by Radii']
 		obj.Mode=1
 
-		obj.addProperty("App::PropertyFloatConstraint", "Start", "Dimensions").Start=(0.0, 0.0, 1000.0, 0.1)
 		obj.addProperty("App::PropertyFloatList", "SplitDistances", "Split").SplitDistances=[ ]
 		obj.addProperty("App::PropertyFloatConstraint", "SplitDistance", "Split").SplitDistance= (0.0, 0.0, 100000000000, 0.1)	# value, min, max, step
 		obj.addProperty("App::PropertyBool", "AddDistance", "Split").AddDistance=False
-		obj.addProperty("App::PropertyInteger", "NumRadii", "Split").NumRadii=1
+		obj.addProperty("App::PropertyFloatConstraint", "Threshold", "Split").Threshold=( 0.0, 0.0, 10000.0, 0.1)
 		obj.addProperty("App::PropertyFloatList", "RadiusSplits", "Split").RadiusSplits=[]
-		obj.addProperty("App::PropertyBool", "ClaimChildren", "Dimensions").ClaimChildren=True
 
 	def onDocumentRestored(self, obj):
 		pass
@@ -224,6 +268,13 @@ class Recompose:
 #			else:
 #				obj.Shape=e
 #			
+		if obj.Threshold:
+			obj.RadiusSplits = getRadii(e, obj.Threshold)
+			params = [ e.getParameterByLength(i) for i in obj.RadiusSplits ]
+			print("params=", params)
+			w = e.split(params)
+			print("w=", w)
+			obj.Shape = w
 		return
 
 		c = [ EdgeToBiArcs(e,obj.Tolerance) for e in obj.Base[0].Shape.Edges ]
@@ -270,15 +321,15 @@ class Recompose:
 				obj.AddDistance=False
 #				print("Added")
 		if name == 'SplitDistance':	# keep SplitDistance between 0 and the length of the Base edge
-			v = forceRange(obj.SplitDistance,obj.Base[0].Shape.Edge1.Length)
+			v = forceRange(obj.SplitDistance,obj.Base[0].Shape.Length)
 			if obj.SplitDistance != v:
 				obj.SplitDistance = v
 		if name == 'Start':	# keep SplitDistance between 0 and the length of the Base edge
-			v = forceRange(obj.Start,obj.Base[0].Shape.Edge1.Length)
+			v = forceRange(obj.Start,obj.Base[0].Shape.Length)
 			if obj.Start != v:
 				obj.Start = v
 
-		if name in ['Start', 'NumRadii', 'Tolerance', 'SplitDistance']:
+		if name in ['Start', 'Threshold', 'Tolerance', 'SplitDistance']:
 			obj.recompute(False)
 		pass
 #		print("onChanged", name)
