@@ -21,10 +21,6 @@ import FreeCAD as App
 import os
 from pathlib import Path
 
-def fixPlacement(s,p):
-	s.Placement=p
-	return s
-
 def EdgeToBiArcs(Edge, tolerance=0.01):
 	if type(Edge.Curve) in [ Part.Line, Part.Circle ]:
 		l=  Edge.Curve.toNurbs(Edge.FirstParameter,Edge.LastParameter)
@@ -32,94 +28,6 @@ def EdgeToBiArcs(Edge, tolerance=0.01):
 	else:
 		l = Edge.Curve.toBiArcs(tolerance)
 	return l
-
-def joinShape(shp):
-	bs = [ EdgeToBSpline(e) for e in shp.Edges ]
-
-	c=bs[0]
-
-	for b in bs[1:]:
-		if not c.join(b):
-			print("JoinFail")
-#			forcejoin(c,b)
-	return c.toShape()
-
-def splitGeo(c):
-	a=c.copy()
-	b=c.copy()
-
-	a.setParameterRange(a.FirstParameter, (a.FirstParameter+a.LastParameter)/2)
-	b.setParameterRange(a.LastParameter, b.LastParameter)
-	return a,b
-
-def splitGeoByLen(c,l):
-	if(l<=0):
-		raise Exception("BUG! can't splitGeoByLen by <=0 length!")
-
-	a=c.copy()
-	b=c.copy()
-
-	r=a.LastParameter-a.FirstParameter
-	l=l/a.length()
-	r*=l
-	r+=a.FirstParameter
-
-#	print("splitGeoByLen: ", a.FirstParameter, r, b.LastParameter)
-	if type(c) in [Part.LineSegment,Part.BSplineCurve ]:
-		a = a.toNurbs(a.FirstParameter,r)
-		b = b.toNurbs(r, b.LastParameter)
-#		print("type b=",type(b))
-	else:
-		a.setParameterRange(a.FirstParameter, r)
-		b.setParameterRange(r, b.LastParameter)
-	return a,b
-
-def SegmentByLength(l, lenlist):	# lenlist must be sorted in reverse order
-	i=j=0
-	curlen=0
-	cmplen=0
-
-	while j<len(l):
-		if not cmplen:
-			try:
-				cmplen=lenlist.pop()
-			except:
-				yield l[i:]
-				return
-
-		if curlen+l[j].length()>cmplen:
-			a,b = splitGeoByLen(l[j], cmplen-curlen)
-			l[j]=a
-			yield l[i:j+1]
-			curlen+= a.length()	# b's length will be added below
-			i=j
-			l[j]=b
-			cmplen=0	# cause pop of new cmplen
-			continue	# re-asess the second part of the curve in case it's long enough to go past the next length
-		elif cmplen+l[j].length()==cmplen:
-			yield l[i:j+1]
-			i=j+1
-
-		curlen+= l[j].length()
-		j+=1
-
-	yield l[-1]
-			
-def SegmentByRadius( l, radii):
-	i=j=0
-	curlen=0
-	while j<len(l):
-		while j<len(l) and not getRad(l[j]) in radii:
-			j+=1
-		if(True and j<len(l)):
-			a,b = splitGeo(l[j])
-			l[j]=a
-			yield l[i:j+1]
-			l[j]=b
-		else:
-			yield l[i:j]
-		i=j
-		j+=1
 
 def makeCumulative(l):
 	acc=0
@@ -206,12 +114,6 @@ def getRadii(edge, tr, tolerance=0.01):
 
 	return distances
 
-#def DistanceToParam(edge, distance):
-#	rnge = edge.LastParameter-edge.FirstParameter
-#
-#	off = rnge*distance/edge.Length
-#	return edge.FirstParameter+off
-	
 class Recompose:
 	def __init__(self, obj):
 		obj.Proxy = self
