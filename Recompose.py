@@ -21,6 +21,55 @@ import FreeCAD as App
 import os
 from pathlib import Path
 
+
+def parameterization(pts, val):
+	params = [0]
+	for i in range(1, len(pts)):
+		p = pts[i].sub(pts[i - 1])
+		pl = pow(p.Length, val)
+		params.append(params[-1] + pl)
+	m = float(max(params))
+	return [p / m for p in params]
+
+
+def periodic_interpolate(pts, params=None, tol=0):
+	if not params:
+		ptmp = pts + pts[:1]
+		params = parameterization(ptmp,1)
+
+	nbp = len(pts)
+	n = 1
+	if nbp <= 4:
+		n = 2
+	npts = pts
+	npts.extend(pts * (2 * n))
+	period = params[-1] - params[0]
+	nparams = []
+	for p in params:
+		for i in range(1, n + 1):
+			nparams.append(p)
+			nparams.append(p - i * period)
+			nparams.append(p + i * period)
+	npars = list(set(nparams))
+	npars.sort()
+	# interpolate the extended list of points
+	bs = Part.BSplineCurve()
+	bs.interpolate(Points=npts, Parameters=npars, PeriodicFlag=True)
+	# extract a one turn BSpline curve in the middle
+	offset = n * nbp
+	npoles = bs.getPoles()[offset:-offset - 1]
+	nmults = bs.getMultiplicities()[offset:-offset]
+	nknots = bs.getKnots()[offset:-offset]
+	nbs = Part.BSplineCurve()
+	nbs.buildFromPolesMultsKnots(npoles, nmults, nknots, True, 3)
+	return nbs.toShape()
+
+def resampleCurve(e, n, tol=0):
+	inc = e.Length/n
+	points = [ e.valueAt(e.FirstParameter+i*inc) for i in range(n) ]
+	
+	return periodic_interpolate(points, tol=tol)
+
 def EdgeToBiArcs(Edge, tolerance=0.01):
 	if type(Edge.Curve) in [ Part.Line, Part.Circle ]:
 		l=  Edge.Curve.toNurbs(Edge.FirstParameter,Edge.LastParameter)
@@ -84,6 +133,19 @@ def getLength(l):
 		acc+=e.length()
 	return acc
 
+def getSmallest(c, i,j):
+	minval = getRad(c[i])
+	idx = i
+
+	for k in range(i+1,j):
+		r=getRad(c[k])
+		if r < minval:
+			minval=r
+			idx=k
+
+	return idx
+	
+
 def getRadii(edge, tr, tolerance=0.01):
 	"""
 	given an edge and a radius threshold, return a list of
@@ -107,9 +169,13 @@ def getRadii(edge, tr, tolerance=0.01):
 
 	dists = [ i for i in getStartDistances(c) ]	# a corresponding list of all distances from the start of the edge
 
-	distances=[]
+	curveidx=[]
 	for i,j in regions:
-		l = getLength(c[i:j])
+		curveidx.append(getSmallest(c,i,j))
+
+	distances=[]
+	for i in curveidx:
+		l = c[i].length()
 		distances.append(l/2 + dists[i])
 
 	return distances
@@ -119,11 +185,12 @@ class Recompose:
 		obj.Proxy = self
 		obj.addProperty("App::PropertyLinkList", "Base", "Base")
 		obj.addProperty("App::PropertyBool", "ClaimChildren", "Dimensions").ClaimChildren=True
-		obj.addProperty("App::PropertyFloatConstraint", "Tolerance", "Dimensions").Tolerance=(0.01, 0.0, 1000.0, 0.01)
 		obj.addProperty("App::PropertyFloatConstraint", "Start", "Dimensions").Start=(0.0, 0.0, 1000.0, 0.1)
+		obj.addProperty("App::PropertyInteger", "Samples", "Dimensions").Samples=100
+		obj.addProperty("App::PropertyFloatConstraint", "Tolerance", "Dimensions").Tolerance=(0.01, 0.0, 1000.0, 0.01)
 
-		obj.addProperty("App::PropertyEnumeration", "Mode", "Base").Mode=['BiArcs', 'Just Join', 'Normal' ]
-		obj.Mode=2
+		obj.addProperty("App::PropertyEnumeration", "Mode", "Base").Mode=['Approximate', 'BiArcs', 'Just Join', 'Normal' ]
+		obj.Mode=3
 
 		obj.addProperty("App::PropertyFloatList", "SplitDistances", "Distance").SplitDistances=[ ]
 		obj.addProperty("App::PropertyFloatConstraint", "SplitDistance", "Distance").SplitDistance= (0.0, 0.0, 100000000000, 0.1)	# value, min, max, step
@@ -137,12 +204,16 @@ class Recompose:
 	def execute(self, obj):
 		s = joinEdges( obj.Base[0].Shape.Edges)
 		if not s:
-			raise Exception(f"{obj.Name}:Can't join")
+			raise Exception(f"{obj.Base[0].Name}:Can't join")
 
 		if obj.Start:
 			e=moveStart(s.Edge1, obj.Start)
 		else:
 			e=s.Edge1
+
+#		# This really only works right if continuity of the curve is C1 or better.
+#		if e.Continuity in [ 'CN', 'C0' ]:
+#			e = resampleCurve(e, obj.Samples, 0)
 
 		if 'Join' in obj.Mode:
 			obj.Shape=e
@@ -152,6 +223,10 @@ class Recompose:
 			c = EdgeToBiArcs(e,obj.Tolerance) # c, a list of all biArcs
 			obj.Shape = Part.makeCompound(c)
 			return
+
+		if 'Approximate' in obj.Mode:
+			c = EdgeToBiArcs(e,obj.Tolerance) # c, a list of all biArcs
+			e= joinEdges(Part.makeCompound(c).Edges)
 
 		if obj.SplitDistance:
 			p = [e.getParameterByLength(obj.SplitDistance)]
@@ -190,7 +265,7 @@ class Recompose:
 			if obj.Start != v:
 				obj.Start = v
 
-		if name in ['Start', 'Threshold', 'Tolerance', 'SplitDistance']:
+		if name in ['Samples', 'Start', 'Threshold', 'Tolerance', 'SplitDistance']:
 			obj.recompute(False)
 		pass
 #		print("onChanged", name)
