@@ -180,13 +180,21 @@ def getRadii(edge, tr, tolerance=0.01):
 
 	return distances
 
+def getKnotParams(edge):
+	c=edge.Curve
+	k = [ i for i in c.KnotSequence if i > edge.FirstParameter and i < edge.LastParameter ]
+	return k
+#	coeff = edge.Length/(edge.LastParameter - edge.FirstParameter)
+
+#	return [ d*coeff for d in k]
+
 class Recompose:
 	def __init__(self, obj):
 		obj.Proxy = self
 		obj.addProperty("App::PropertyLinkList", "Base", "Base")
 		obj.addProperty("App::PropertyBool", "ClaimChildren", "Dimensions").ClaimChildren=True
 		obj.addProperty("App::PropertyFloatConstraint", "Start", "Dimensions").Start=(0.0, 0.0, 1000.0, 0.1)
-		obj.addProperty("App::PropertyInteger", "Samples", "Dimensions").Samples=100
+		obj.addProperty("App::PropertyBool", "UseKnots", "Dimensions").UseKnots=False
 		obj.addProperty("App::PropertyFloatConstraint", "Tolerance", "Dimensions").Tolerance=(0.01, 0.0, 1000.0, 0.01)
 
 		obj.addProperty("App::PropertyEnumeration", "Mode", "Base").Mode=['Approximate', 'BiArcs', 'Just Join', 'Normal' ]
@@ -236,6 +244,9 @@ class Recompose:
 		if obj.SplitDistances:
 			params = [ e.getParameterByLength(i) for i in obj.SplitDistances ]
 			p = p + params
+
+		if obj.UseKnots:
+			p = p + getKnotParams(e)
 
 		if obj.Threshold:
 			obj.RadiusSplits = getRadii(e, obj.Threshold)
