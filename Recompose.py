@@ -20,6 +20,7 @@ import Draft, Part, FreeCADGui
 import FreeCAD as App
 import os
 from pathlib import Path
+from MinMaxHelper import ComputeMinMax
 
 
 def parameterization(pts, val):
@@ -203,8 +204,15 @@ class Recompose:
 		obj.addProperty("App::PropertyFloatList", "SplitDistances", "Distance").SplitDistances=[ ]
 		obj.addProperty("App::PropertyFloatConstraint", "SplitDistance", "Distance").SplitDistance= (0.0, 0.0, 100000000000, 0.1)	# value, min, max, step
 		obj.addProperty("App::PropertyBool", "AddDistance", "Distance").AddDistance=False
+		obj.addProperty("App::PropertyBool", "UseDistance", "Distance").UseDistance=False
+
+		obj.addProperty("App::PropertyEnumeration", "MinMaxMode", "MinMax").MinMaxMode=['Auto', 'ComputeDown', 'CG' ]
+		obj.MinMaxMode=0
+		obj.addProperty("App::PropertyBool", "UseMinMax", "MinMax").UseMinMax=False
+
 		obj.addProperty("App::PropertyFloatConstraint", "Threshold", "Radius").Threshold=( 0.0, 0.0, 10000.0, 0.1)
 		obj.addProperty("App::PropertyFloatList", "RadiusSplits", "Radius").RadiusSplits=[]
+		obj.addProperty("App::PropertyBool", "UseRadius", "Radius").UseRadius=False
 
 	def onDocumentRestored(self, obj):
 		pass
@@ -236,26 +244,32 @@ class Recompose:
 			c = EdgeToBiArcs(e,obj.Tolerance) # c, a list of all biArcs
 			e= joinEdges(Part.makeCompound(c).Edges)
 
-		if obj.SplitDistance:
-			p = [e.getParameterByLength(obj.SplitDistance)]
-		else:
-			p=[]
+		p = []
 
-		if obj.SplitDistances:
-			params = [ e.getParameterByLength(i) for i in obj.SplitDistances ]
-			p = p + params
+		if obj.UseDistance:
+			if obj.SplitDistance:
+				p = p + [e.getParameterByLength(obj.SplitDistance)]
+
+			if obj.SplitDistances:
+				params = [ e.getParameterByLength(i) for i in obj.SplitDistances ]
+				p = p + params
+
+		if obj.UseMinMax:
+			cmm = ComputeMinMax(e, downmode=obj.MinMaxMode)
+			p = p + cmm.params
 
 		if obj.UseKnots:
 			p = p + getKnotParams(e)
 
-		if obj.Threshold:
+		if obj.UseRadius and obj.Threshold:
 			obj.RadiusSplits = getRadii(e, obj.Threshold)
 			params = [ e.getParameterByLength(i) for i in obj.RadiusSplits ]
 			p = p + params
 			print("params=", params)
 
 		p = list(set(p))
-		w = e.split(p)
+		q = [ i for i in p if i!=e.FirstParameter and i!= e.LastParameter ]
+		w = e.split(q)
 #		print("w=", w)
 		obj.Shape = w
 
@@ -370,6 +384,7 @@ def _create(obj, name="Recompose"):
     myObj = App.ActiveDocument.addObject("Part::FeaturePython", name)
     Recompose(myObj)
     myObj.Base= obj 
+    myObj.Placement = obj.Placement
     ViewProviderRecompose(myObj.ViewObject)
     obj.ViewObject.Visibility=False
     App.ActiveDocument.recompute()
