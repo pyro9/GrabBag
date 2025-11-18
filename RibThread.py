@@ -90,7 +90,7 @@ class RibThread:
 		obj.Shape=computeShape(dia/2, drill/2, obj.Height, obj.RibCount, obj.BoreDepth, obj.invert, obj.debug)
 
 	def onChanged(self, obj, name):
-		print("onChanged", name)
+		pass
 		
 class ViewProviderRibThread:
 
