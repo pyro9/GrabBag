@@ -20,19 +20,30 @@ import Draft, Part, FreeCADGui
 import FreeCAD as App
 import os
 from pathlib import Path
+from math import sin, cos, pi
 
-def computeRadial(v0, v1, line, angle):
+def ComputePlane2d(angle, radius):
+	y=sin(angle)*radius
+	x=cos(angle)*radius
+	z=0
+	return App.Vector(x,y,z)
 
-	direction = v1.sub(v0)
-	r=App.Rotation(App.Vector(0,0,1),direction)
-	plDirection=App.Placement()
-	plDirection.Rotation.Q = r.Q
-	plDirection.Base = v0
-	
-	line.Placement = plDirection.multiply(App.Placement(App.Vector(0, 0, 0), App.Rotation(angle,0,0), App.Vector(0, 0, 0)))
-	line.recompute()
-#	FreeCAD.activeDocument().recompute([line])	# Necessary to actually instantiate line's position.
-	return line.End
+def computeRadial(v0,v1, angle, radius):#	-- start and end are vectors representing the sample point and the next sample point on the path
+	axis=v1-v0
+	axis.normalize()
+	u=ComputePlane2d(angle,radius)
+
+	z=App.Vector(0,0,1)
+
+	y=axis.cross(z)
+	y.normalize()
+
+	t=axis.cross(y)
+	t.normalize()
+
+	m=App.Matrix(t,y,axis)
+	v=m*u
+	return v0+v
 
 
 def MakeHelix(path, pitch, radius, cont=0, rotation=0, direction=1, join=False):
@@ -41,20 +52,20 @@ def MakeHelix(path, pitch, radius, cont=0, rotation=0, direction=1, join=False):
 	pathPoints = path.discretize(Distance=path.Length/PathDistance)
 	print("pathPoints=", pathPoints)
 
-	radialLine = Draft.makeWire([ App.Vector(0,0,0), App.Vector(radius, 0.0, 0.0)], closed=False, face=False, support=None)
-	radialLine.Visibility=False
+#	radialLine = Draft.makeWire([ App.Vector(0,0,0), App.Vector(radius, 0.0, 0.0)], closed=False, face=False, support=None)
+#	radialLine.Visibility=False
 	radialPoints = []
 
 	angle=rotation
-	increment = 90*direction
+	increment = -pi*direction/2
 	for i in range(len(pathPoints)-1):
-		radialPoints.append( computeRadial(pathPoints[i], pathPoints[i+1], radialLine, angle) )
-		angle = (angle+increment)%360
+		radialPoints.append( computeRadial(pathPoints[i], pathPoints[i+1], angle, radius) )
+		angle = (angle+increment)%(2*pi)
 	if(cont):
 		i = len(pathPoints)-2
 		for x in range(cont):
-			radialPoints.append( computeRadial(pathPoints[i], pathPoints[i+1], radialLine, angle) )
-			angle = (angle+increment)%360
+			radialPoints.append( computeRadial(pathPoints[i], pathPoints[i+1], angle, radius) )
+			angle = (angle+increment)%(2*pi)
 
 	arcs=[]
 	for i in range(0,len(radialPoints),2):
@@ -63,7 +74,7 @@ def MakeHelix(path, pitch, radius, cont=0, rotation=0, direction=1, join=False):
 		except:
 			pass
 
-	radialLine.Document.removeObject(radialLine.Name)
+#	radialLine.Document.removeObject(radialLine.Name)
 
 	if join:
 		bs = [ a.toBSpline(a.FirstParameter, a.LastParameter) for a in arcs ]
@@ -79,14 +90,6 @@ def MakeHelix(path, pitch, radius, cont=0, rotation=0, direction=1, join=False):
 	print("W=",w)
 
 	return w
-
-#sel = FreeCADGui.Selection.getSelectionEx()                 #0# Select an object or sub object
-#subObject  = sel[0].SubObjects[0]
-#print(sel[0].SubObjects)
-#print( subObject, subObject.Length)
-#print(type(subObject))
-#if len(sel[0].SubObjects)>1:
-#	subObject = Part.Wire(sel[0].SubObjects)
 
 
 class PathHelix:
@@ -111,7 +114,7 @@ class PathHelix:
 
 	def execute(self, obj):
 		print("Spine=", obj.Spine.Shape)
-		w = MakeHelix(obj.Spine.Shape, obj.Pitch, obj.Radius, rotation=obj.Rotation, cont=2 if(obj.ExtraHalf) else 0, direction= -1 if(obj.Reverse) else 1, join=obj.Join)
+		w = MakeHelix(obj.Spine.Shape, obj.Pitch, obj.Radius, rotation=obj.Rotation*pi/180, cont=2 if(obj.ExtraHalf) else 0, direction= -1 if(obj.Reverse) else 1, join=obj.Join)
 #		w.Placement = obj.Placement
 		obj.Shape=w
 #		Part.show(obj.Shape)
@@ -235,17 +238,22 @@ class ViewProviderPathHelix:
 #w = MakeHelix(subObject, 1, 3, cont=2)
 #Part.show(w)
 
-def create(name="PathHelix"):
+def create(name="PathHelix", obj=None):
     sel2 = FreeCADGui.Selection.getSelection()[0] 
     print("sel2=",sel2)
 
-    myObj = App.ActiveDocument.addObject("Part::FeaturePython", "PathHelix")
-    PathHelix(myObj)
-    myObj.Radius=3
-    myObj.Pitch=1
-    myObj.Rotation=0
-    myObj.Spine=sel2
-    myObj.Count=sel2.Shape.Length
+    if obj:
+        myObj = obj
+        p=PathHelix(myObj)
+        p.onDocumentLoaded(myObj)
+    else:
+        myObj = App.ActiveDocument.addObject("Part::FeaturePython", "PathHelix")
+        PathHelix(myObj)
+        myObj.Radius=3
+        myObj.Pitch=1
+        myObj.Rotation=0
+        myObj.Spine=sel2
+        myObj.Count=sel2.Shape.Length
     ViewProviderPathHelix(myObj.ViewObject)
     App.ActiveDocument.recompute()
 
