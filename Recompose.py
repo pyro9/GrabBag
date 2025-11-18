@@ -196,7 +196,7 @@ class Recompose:
 		obj.addProperty("App::PropertyBool", "ClaimChildren", "Dimensions").ClaimChildren=True
 		obj.addProperty("App::PropertyFloatConstraint", "Start", "Dimensions").Start=(0.0, 0.0, 1000.0, 0.1)
 		obj.addProperty("App::PropertyBool", "UseKnots", "Dimensions").UseKnots=False
-		obj.addProperty("App::PropertyFloatConstraint", "Tolerance", "Dimensions").Tolerance=(0.01, 0.0, 1000.0, 0.01)
+		obj.addProperty("App::PropertyFloatConstraint", "Tolerance", "Dimensions").Tolerance=(0.01, 0.01, 1000.0, 0.01)
 
 		obj.addProperty("App::PropertyEnumeration", "Mode", "Base").Mode=['Approximate', 'BiArcs', 'Just Join', 'Normal' ]
 		obj.Mode=3
@@ -206,7 +206,8 @@ class Recompose:
 		obj.addProperty("App::PropertyBool", "AddDistance", "Distance").AddDistance=False
 		obj.addProperty("App::PropertyBool", "UseDistance", "Distance").UseDistance=False
 
-		obj.addProperty("App::PropertyEnumeration", "MinMaxMode", "MinMax").MinMaxMode=['Auto', 'ComputeDown', 'CG' ]
+		obj.addProperty("App::PropertyEnumeration", "MinMaxMode", "MinMax").MinMaxMode=['Auto', 'ComputeDown', 'CG', 'SetCG' ]
+		obj.addProperty("App::PropertyLink", "SetCG", "MinMax")
 		obj.MinMaxMode=0
 		obj.addProperty("App::PropertyBool", "UseMinMax", "MinMax").UseMinMax=False
 
@@ -215,12 +216,16 @@ class Recompose:
 		obj.addProperty("App::PropertyBool", "UseRadius", "Radius").UseRadius=False
 
 	def onDocumentRestored(self, obj):
-		pass
+		obj.ViewObject.Proxy.fp = obj
 
 	def execute(self, obj):
+		if not obj.Base or not obj.Base[0].Shape.isValid():
+			obj.Shape = Part.makeCompound([])
+			return
+
 		s = joinEdges( obj.Base[0].Shape.Edges)
 		if not s:
-			raise Exception(f"{obj.Base[0].Name}:Can't join")
+			raise Exception("{obj.Base[0].Name}:Can't join")
 
 		if obj.Start:
 			e=moveStart(s.Edge1, obj.Start)
@@ -256,6 +261,8 @@ class Recompose:
 
 		if obj.UseMinMax:
 			cmm = ComputeMinMax(e, downmode=obj.MinMaxMode)
+			if 'Set' in obj.MinMaxMode:
+				cmm.cg = obj.SetCG.Shape.CenterOfGravity
 			p = p + cmm.params
 
 		if obj.UseKnots:
@@ -265,7 +272,7 @@ class Recompose:
 			obj.RadiusSplits = getRadii(e, obj.Threshold)
 			params = [ e.getParameterByLength(i) for i in obj.RadiusSplits ]
 			p = p + params
-			print("params=", params)
+#			print("params=", params)
 
 		p = list(set(p))
 		q = [ i for i in p if i!=e.FirstParameter and i!= e.LastParameter ]
@@ -274,6 +281,8 @@ class Recompose:
 		obj.Shape = w
 
 	def onChanged(self, obj, name):
+		if not obj.Base or not obj.Base[0].Shape.isValid():
+			return
 		if name == 'AddDistance':
 			if obj.AddDistance:
 				l=obj.SplitDistances
@@ -292,9 +301,11 @@ class Recompose:
 
 		if name in ['Samples', 'Start', 'Threshold', 'Tolerance', 'SplitDistance']:
 			obj.recompute(False)
-		pass
 #		print("onChanged", name)
 		
+	def __repr__(self):
+		return f"<Test: {self.__class__}>"
+
 class ViewProviderRecompose:
 
     def __init__(self, obj):
@@ -313,6 +324,7 @@ class ViewProviderRecompose:
 
     def doubleClicked(self, obj):
         print("doubleClicked\n")
+        self.fp = obj.Object
         return True	# return True if handled, False to fall through
     
     def updateData(self, fp, prop):
@@ -374,21 +386,21 @@ class ViewProviderRecompose:
         """
 
 def attach(myObj, obj):
-    myObj.addExtension('Part::AttachExtensionPython')
-    myObj.AttacherEngine="Engine 3D"
-    myObj.MapMode="ObjectXY"
-    myObj.AttachmentSupport=obj
-    myObj.MapPathParameter=0
+	myObj.addExtension('Part::AttachExtensionPython')
+	myObj.AttacherEngine="Engine 3D"
+	myObj.MapMode="ObjectXY"
+	myObj.AttachmentSupport=obj
+	myObj.MapPathParameter=0
 
 def _create(obj, name="Recompose"):
-    myObj = App.ActiveDocument.addObject("Part::FeaturePython", name)
-    Recompose(myObj)
-    myObj.Base= obj 
-    myObj.Placement = obj.Placement
-    ViewProviderRecompose(myObj.ViewObject)
-    obj.ViewObject.Visibility=False
-    App.ActiveDocument.recompute()
-    return myObj
+	myObj = App.ActiveDocument.addObject("Part::FeaturePython", name)
+	Recompose(myObj)
+	myObj.Base= obj 
+	myObj.Placement = obj.Placement
+	ViewProviderRecompose(myObj.ViewObject)
+	obj.ViewObject.Visibility=False
+	App.ActiveDocument.recompute()
+	return myObj
 
 def create(name="Recompose"):
     sel = FreeCADGui.Selection.getSelectionEx()[0]
