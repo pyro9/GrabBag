@@ -50,10 +50,10 @@ def computeRadial(v0,v1, angle, radius):#	-- start and end are vectors represent
 	print(axis*z)
 	try:
 		y.normalize()
+		y=abs(y)
 
 		t=axis.cross(y)		# compute x axis basis vector
 		t.normalize()
-
 		m=App.Matrix(t,y,axis)	# build a matrix to project the UV space into 3D space
 		v=m*u
 	except App.Base.FreeCADError as e:
