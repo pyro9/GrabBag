@@ -47,7 +47,8 @@ def computeRadial(v0,v1, angle, radius):#	-- start and end are vectors represent
 	z=App.Vector(0,0,1)	# since the plane lies on XY
 
 	y=axis.cross(z)		# compute u axis basis vector
-	print(axis*z)
+#	print(axis*z)
+	t=None
 	try:
 		y.normalize()
 		y=abs(y)
@@ -59,6 +60,8 @@ def computeRadial(v0,v1, angle, radius):#	-- start and end are vectors represent
 	except App.Base.FreeCADError as e:
 		# u may need to be flipped over (mirrored) here in case the normals are near reverse of each other
 		print(e, z*axis)
+		print(f"Axis={axis}\ny={y}\nt={t}")
+		print(f"u={u}\nv0={v0}")
 		v=u
 	return v0+v	# Apply the transformed vector so that the origin is on the path.
 
@@ -85,6 +88,12 @@ def MakeHelix(path, pitch, radius, cont=0, rotation=0, direction=1, join=False, 
 			radialPoints.append( computeRadial(pathPoints[i], pathPoints[i+1], angle, rad) )
 			angle = (angle+increment)%(2*pi)
 
+	if Guide and Guide.Curve.isClosed():
+		print("Path Helix closing")
+#		p=computeRadial(pathPoints[len(pathPoints)-1], pathPoints[0], angle, rad)
+#		radialPoints.append(p)
+		radialPoints.append(radialPoints[0])
+		
 	arcs=[]
 	for i in range(0,len(radialPoints),2):
 		try:
