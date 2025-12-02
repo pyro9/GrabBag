@@ -21,5 +21,8 @@ Lofts from one face to another in the Part workbench. Works more like the loft t
 ## WireBinder ![WireBinder icon](/WireBinder.svg)
 Works similar to sub-object shape binder, but selects shape wires by number from the feature it is applied to. Notably, connected lines in a sketch will form a single wire.
 
+## Recompose ![Recompose icon](/Recompose.svg)
+Automatically split a curve using several different approaches. Useful for creating a sweep along a path that would otherwise self-intersect.
+
 ## Install
 Just clone this repository in your FreeCAD/Mod directory, then (re)start FreeCAD.
