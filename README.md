@@ -27,7 +27,7 @@ Automatically split a curve using several different approaches. Useful for creat
 ## TearDrop ![TearDrop icon](TearDrop.svg)
 Create a hole cutting tool with a slight tear drop shape at the top for improved printability on an FDM 3D printer.
 
-## RibThread ![RibThread icon](RibThread.svg)
+## RibThread <img src="RibThread.svg" width=64 height=64 alt="RibThread icon">
 Create a hole cutting tool that leaves ribs in the hole suitable for cutting threads with a machine bolt. Commonly used in 3D printed parts.
 
 ## Install
