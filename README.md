@@ -24,5 +24,11 @@ Works similar to sub-object shape binder, but selects shape wires by number from
 ## Recompose ![Recompose icon](/Recompose.svg)
 Automatically split a curve using several different approaches. Useful for creating a sweep along a path that would otherwise self-intersect.
 
+## TearDrop ![TearDrop icon](TearDrop.svg)
+Create a hole cutting tool with a slight tear drop shape at the top for improved printability on an FDM 3D printer.
+
+## RibThread ![RibThread icon](RibThread.svg)
+Create a hole cutting tool that leaves ribs in the hole suitable for cutting threads with a machine bolt. Commonly used in 3D printed parts.
+
 ## Install
 Just clone this repository in your FreeCAD/Mod directory, then (re)start FreeCAD.
