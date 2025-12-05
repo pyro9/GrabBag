@@ -44,14 +44,19 @@ def computeRadial(v0,v1, angle, radius):#	-- start and end are vectors represent
 	axis.normalize()
 	u=ComputePlane2d(angle,radius)
 
-	z=App.Vector(0,0,1)	# since the plane lies on XY
+	Z=App.Vector(0,0,1)	# since the plane lies on XY
+	Y=App.Vector(0,1,0)
 
-	y=axis.cross(z)		# compute u axis basis vector
+	if abs(Z*axis) > abs(Y*axis): # compute u axis basis vector
+		y=axis.cross(Y)
+	else:
+		y=axis.cross(Z)
+
 #	print(axis*z)
 	t=None
 	try:
 		y.normalize()
-		y=abs(y)
+#		y=abs(y)
 
 		t=axis.cross(y)		# compute x axis basis vector
 		t.normalize()
@@ -88,7 +93,8 @@ def MakeHelix(path, pitch, radius, cont=0, rotation=0, direction=1, join=False, 
 			radialPoints.append( computeRadial(pathPoints[i], pathPoints[i+1], angle, rad) )
 			angle = (angle+increment)%(2*pi)
 
-	if Guide and Guide.Curve.isClosed():
+	if path.isClosed():
+#	if Guide and Guide.Curve.isClosed():
 		print("Path Helix closing")
 #		p=computeRadial(pathPoints[len(pathPoints)-1], pathPoints[0], angle, rad)
 #		radialPoints.append(p)
@@ -99,6 +105,7 @@ def MakeHelix(path, pitch, radius, cont=0, rotation=0, direction=1, join=False, 
 		try:
 			arcs.append(Part.Arc(radialPoints[i], radialPoints[i+1], radialPoints[i+2]))
 		except:
+			print(f"Arc failed {radialPoints[i]}, {radialPoints[i]},{radialPoints[i]}")
 			pass
 
 
