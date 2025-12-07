@@ -117,6 +117,7 @@ class PathHelix:
 		obj.addProperty("App::PropertyFloat", "Rotation", "Dimensions")
 		obj.addProperty("App::PropertyLink", "Spine", "Dimensions")
 		obj.addProperty("App::PropertyLink", "Guide", "Dimensions")
+		obj.addProperty("App::PropertyLink", "FillShape", "Dimensions")
 		obj.addProperty("App::PropertyBool", "ExtraHalf", "Dimensions").ExtraHalf=False
 		obj.addProperty("App::PropertyBool", "Reverse", "Dimensions").Reverse=False
 		obj.addProperty("App::PropertyBool", "Join", "Dimensions").Join=True
@@ -131,6 +132,9 @@ class PathHelix:
 
 		if (not hasattr(obj,"Guide")):
 			obj.addProperty("App::PropertyLink", "Guide", "Dimensions")
+
+		if (not hasattr(obj,"FillShape")):
+			obj.addProperty("App::PropertyLink", "FillShape", "Dimensions")
 
 	def execute(self, obj):
 		print("Spine=", obj.Spine.Shape)
@@ -262,14 +266,18 @@ class ViewProviderPathHelix:
 #Part.show(w)
 
 def create(name="PathHelix", obj=None):
-    sel2 = FreeCADGui.Selection.getSelection()[0] 
-    print("sel2=",sel2)
-
     if obj:
         myObj = obj
         p=PathHelix(myObj)
         p.onDocumentLoaded(myObj)
     else:
+        sel2 = FreeCADGui.Selection.getSelection()[0] 
+        print(sel2)
+        try:
+            guide = FreeCADGui.Selection.getSelection()[1] 
+        except:
+            guide=None
+
         myObj = App.ActiveDocument.addObject("Part::FeaturePython", "PathHelix")
         PathHelix(myObj)
         myObj.Radius=3
@@ -277,13 +285,18 @@ def create(name="PathHelix", obj=None):
         myObj.Rotation=0
         myObj.Spine=sel2
         myObj.Count=sel2.Shape.Length
+
+        if guide and guide.Shape.Faces:
+            myObj.FillShape = guide
+        else:
+            myObj.Guide = guide
     ViewProviderPathHelix(myObj.ViewObject)
     App.ActiveDocument.recompute()
 
 
 # -------------------------- Gui command --------------------------------------------------
 
-from PySide import QtCore
+from PySide import QtCore, QtGui
 
 
 def activeBody():
@@ -308,16 +321,16 @@ class _CommandPathHelix:
         return {'Pixmap'  : str(Path(__file__).parent / 'PathHelix.svg'),
                 'MenuText': QtCore.QT_TRANSLATE_NOOP("4axis_PathHelix","PathHelix"),
                 'Accel': "",
-                'ToolTip': QtCore.QT_TRANSLATE_NOOP("4axis_PathHelix","Create a Helix that follows a path")}
+                'ToolTip': QtCore.QT_TRANSLATE_NOOP("4axis_PathHelix","Create a Helix that follows a path.\nSelect an object with a single edge as a path.\nOptionally select a second object with a single edge as a guide.")}
         
     def Activated(self):
-        if len(FreeCADGui.Selection.getSelection()) == 1 :
+        if len(FreeCADGui.Selection.getSelection()) >= 1 :
             CreatePathHelix(name = "PathHelix")
         else:
             mb = QtGui.QMessageBox()
             mb.setIcon(mb.Icon.Warning)
-            mb.setText(translate("4Axis_PathHelix", "Select a shape that is a compound whose children intersect, first!", None))
-            mb.setWindowTitle(translate("4axis_PathHelix","Bad selection", None))
+            mb.setText(QtCore.QT_TRANSLATE_NOOP("4Axis_PathHelix", "Select a shape with a single edge first!"))
+            mb.setWindowTitle(QtCore.QT_TRANSLATE_NOOP("4axis_PathHelix","Bad selection"))
             mb.exec_()
             
     def IsActive(self):
