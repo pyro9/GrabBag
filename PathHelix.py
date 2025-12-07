@@ -60,9 +60,20 @@ def computeRadial(v0,v1, angle, radius):#	-- start and end are vectors represent
 	v=m*u
 	return v	# Apply the transformed vector so that the origin is on the path.
 
+def findIntersect(p, p1, theta, s):    # p is point as vector, v is direction from point, s is list of surfaves that might intersect.
+	v=computeRadial(p,p1, theta, 1)
+	v.normalize()
+	q = p+v*1000
+	ls=Part.LineSegment(p,q)
+	
+	i = [ ls.intersect(s0)[0] for s0 in s ]
+	i = sum(i,[])
+	d= min([ p.distanceToPoint(App.Vector(po.X, po.Y, po.Z)) for po in i])
+	ret = p+(d*v)
+	return ret
 
-def MakeHelix(path, pitch, radius, cont=0, rotation=0, direction=1, join=False, Guide=None):
-	PathDistance=path.Length*4/pitch	# 4 sample points per turn
+def MakeHelix(path, pitch, radius, cont=0, rotation=0, direction=1, join=False, Guide=None, res=4):
+	PathDistance=path.Length*res/pitch	# 4 sample points per turn
 	print("distance=",PathDistance)
 	pathPoints = path.discretize(Distance=path.Length/PathDistance)
 #	print("pathPoints=", pathPoints)
@@ -70,7 +81,7 @@ def MakeHelix(path, pitch, radius, cont=0, rotation=0, direction=1, join=False, 
 	radialPoints = []
 
 	angle=rotation
-	increment = -pi*direction/2
+	increment = (-2*pi)*direction/res
 	rad = radius
 	for i in range(len(pathPoints)-1):
 		if Guide:
@@ -107,6 +118,27 @@ def MakeHelix(path, pitch, radius, cont=0, rotation=0, direction=1, join=False, 
 
 	return w
 
+def FillHelix(path, pitch, shape, rotation=0, direction=1, res=128):
+	PathDistance=path.Length*res/pitch	# 4 sample points per turn
+	print("distance=",PathDistance)
+	pathPoints = path.discretize(Distance=path.Length/PathDistance)
+
+	shp = [ f.Surface for f in shape.Shape.Faces ]
+	print(f"FillHelix shp={shp}")
+
+	angle=rotation
+	increment = (-2*pi)*direction/res
+
+	radialPoints = []
+	for i in range(len(pathPoints)-1):
+		radialPoints.append(findIntersect(pathPoints[i], pathPoints[i+1], angle, shp))
+		angle = (angle+increment)%(2*pi)
+
+	if path.isClosed():
+		radialPoints.append(radialPoints[0])
+
+	b = Part.BSplineCurve(radialPoints)
+	return b.toShape()
 
 class PathHelix:
 	def __init__(self, obj):
@@ -138,11 +170,13 @@ class PathHelix:
 
 	def execute(self, obj):
 		print("Spine=", obj.Spine.Shape)
-		edge=None
-		if obj.Guide:
-			edge=obj.Guide.Shape.Edge1
-		w = MakeHelix(obj.Spine.Shape, obj.Pitch, obj.Radius, rotation=obj.Rotation*pi/180, cont=2 if(obj.ExtraHalf) else 0, direction= -1 if(obj.Reverse) else 1, join=obj.Join, Guide=edge)
-#		w.Placement = obj.Placement
+		if obj.FillShape:
+			w=FillHelix(obj.Spine.Shape, obj.Pitch, obj.FillShape, rotation=obj.Rotation*pi/180, direction= -1 if(obj.Reverse) else 1, res=16)
+		else:
+			edge=None
+			if obj.Guide:
+				edge=obj.Guide.Shape.Edge1
+			w = MakeHelix(obj.Spine.Shape, obj.Pitch, obj.Radius, rotation=obj.Rotation*pi/180, cont=2 if(obj.ExtraHalf) else 0, direction= -1 if(obj.Reverse) else 1, join=obj.Join, Guide=edge)
 		obj.Shape=w
 #		Part.show(obj.Shape)
 
