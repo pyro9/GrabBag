@@ -29,20 +29,20 @@ def radiusToGuide(p0,p1,guide):
 
 	rp=guide.intersect(plane)[0]
 	# rp may be multiple points
-	rp = [p0.distanceToPoint(App.Vector(p.X,p.Y,p.Z)) for p in rp]	# convert Point to Vector
+	rp = [p0.distanceToPoint(App.Vector(p.X,p.Y,p.Z)) for p in rp]	# convert Point to Vector then find distance to p0
 
 	return min(rp)
 
-def ComputePlane2d(angle, radius):
-	y=sin(angle)*radius
-	x=cos(angle)*radius
+def ComputePlane2d(angle):
+	y=sin(angle)
+	x=cos(angle)
 	z=0
 	return App.Vector(x,y,z)
 
 def computeRadial(v0,v1, angle, radius):#	-- start and end are vectors representing the sample point and the next sample point on the path
 	axis=v1-v0
 	axis.normalize()
-	u=ComputePlane2d(angle,radius)
+	u=ComputePlane2d(angle) * radius
 
 	Z=App.Vector(0,0,1)	# since the plane lies on XY
 	Y=App.Vector(0,1,0)
@@ -58,7 +58,7 @@ def computeRadial(v0,v1, angle, radius):#	-- start and end are vectors represent
 	t.normalize()
 	m=App.Matrix(t,y,axis)	# build a matrix to project the UV space into 3D space
 	v=m*u
-	return v0+v	# Apply the transformed vector so that the origin is on the path.
+	return v	# Apply the transformed vector so that the origin is on the path.
 
 
 def MakeHelix(path, pitch, radius, cont=0, rotation=0, direction=1, join=False, Guide=None):
@@ -75,12 +75,12 @@ def MakeHelix(path, pitch, radius, cont=0, rotation=0, direction=1, join=False, 
 	for i in range(len(pathPoints)-1):
 		if Guide:
 			rad = radiusToGuide(pathPoints[i], pathPoints[i+1], Guide.Curve)
-		radialPoints.append( computeRadial(pathPoints[i], pathPoints[i+1], angle, rad) )
+		radialPoints.append( computeRadial(pathPoints[i], pathPoints[i+1], angle, rad) + pathPoints[i] )
 		angle = (angle+increment)%(2*pi)
 	if(cont):
 		i = len(pathPoints)-2
 		for x in range(cont):
-			radialPoints.append( computeRadial(pathPoints[i], pathPoints[i+1], angle, rad) )
+			radialPoints.append( computeRadial(pathPoints[i], pathPoints[i+1], angle, rad) + pathPoints[i] )
 			angle = (angle+increment)%(2*pi)
 
 	if path.isClosed():
