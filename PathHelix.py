@@ -52,22 +52,12 @@ def computeRadial(v0,v1, angle, radius):#	-- start and end are vectors represent
 	else:
 		y=axis.cross(Z)
 
-#	print(axis*z)
-	t=None
-	try:
-		y.normalize()
-#		y=abs(y)
+	y.normalize()
 
-		t=axis.cross(y)		# compute x axis basis vector
-		t.normalize()
-		m=App.Matrix(t,y,axis)	# build a matrix to project the UV space into 3D space
-		v=m*u
-	except App.Base.FreeCADError as e:
-		# u may need to be flipped over (mirrored) here in case the normals are near reverse of each other
-		print(e, z*axis)
-		print(f"Axis={axis}\ny={y}\nt={t}")
-		print(f"u={u}\nv0={v0}")
-		v=u
+	t=axis.cross(y)		# compute x axis basis vector
+	t.normalize()
+	m=App.Matrix(t,y,axis)	# build a matrix to project the UV space into 3D space
+	v=m*u
 	return v0+v	# Apply the transformed vector so that the origin is on the path.
 
 
@@ -94,10 +84,6 @@ def MakeHelix(path, pitch, radius, cont=0, rotation=0, direction=1, join=False, 
 			angle = (angle+increment)%(2*pi)
 
 	if path.isClosed():
-#	if Guide and Guide.Curve.isClosed():
-		print("Path Helix closing")
-#		p=computeRadial(pathPoints[len(pathPoints)-1], pathPoints[0], angle, rad)
-#		radialPoints.append(p)
 		radialPoints.append(radialPoints[0])
 		
 	arcs=[]
@@ -115,10 +101,7 @@ def MakeHelix(path, pitch, radius, cont=0, rotation=0, direction=1, join=False, 
 		[ b.join(e) for e in bs[1:] ]
 		return b.toShape()
 
-#	print("points:", radialPoints)
 	shp=Part.Shape(arcs)
-#	print(shp)
-#	print(shp.Edges)
 	w = Part.Wire(shp.Edges)
 	print("W=",w)
 
