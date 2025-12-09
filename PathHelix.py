@@ -60,17 +60,23 @@ def computeRadial(v0,v1, angle, radius):#	-- start and end are vectors represent
 	v=m*u
 	return v	# Apply the transformed vector so that the origin is on the path.
 
+def DoesIntersect(line,face):
+	i=face.Surface.intersect(line)[0]
+
+	v = [ App.Vector(j.X,j.Y,j.Z) for j in i]
+	return [ i for i in v if face.isInside(i,0.001,True) ]	# Surface.intersect can return false positives sometimes, I don't know why
+								# face.isInside removes those
+
 def findIntersect(p, p1, theta, s):    # p is point as vector, v is direction from point, s is list of surfaves that might intersect.
 	v=computeRadial(p,p1, theta, 1)
 	v.normalize()
 	q = p+v*1000
 	ls=Part.LineSegment(p,q)
 	
-	i = [ ls.intersect(s0)[0] for s0 in s ]
+	i= [ DoesIntersect(ls,f) for f in s]
 	i = sum(i,[])
-	d= [ p.distanceToPoint(App.Vector(po.X, po.Y, po.Z)) for po in i]
-#	d= min([ p.distanceToPoint(App.Vector(po.X, po.Y, po.Z)) for po in i])
-	return p+(min(d)*v), p+(max(d)*v)
+	d= [ p.distanceToPoint(po) for po in i]
+	return p+(min(d)*v)
 
 def MakeHelix(path, pitch, radius, cont=0, rotation=0, direction=1, join=False, Guide=None, res=4):
 	PathDistance=path.Length*res/pitch	# 4 sample points per turn
@@ -118,12 +124,12 @@ def MakeHelix(path, pitch, radius, cont=0, rotation=0, direction=1, join=False, 
 
 	return w
 
-def FillHelix(path, pitch, shape, rotation=0, direction=1, res=128, minmax=0):
+def FillHelix(path, pitch, shape, rotation=0, direction=1, res=128):
 	PathDistance=path.Length*res/pitch	# 4 sample points per turn
 	print("distance=",PathDistance)
 	pathPoints = path.discretize(Distance=path.Length/PathDistance)
 
-	shp = [ f.Surface for f in shape.Shape.Faces ]
+	shp = shape.Shape.Faces
 	print(f"FillHelix shp={shp}")
 
 	angle=rotation
@@ -131,7 +137,7 @@ def FillHelix(path, pitch, shape, rotation=0, direction=1, res=128, minmax=0):
 
 	radialPoints = []
 	for i in range(len(pathPoints)-1):
-		radialPoints.append(findIntersect(pathPoints[i], pathPoints[i+1], angle, shp)[minmax])
+		radialPoints.append(findIntersect(pathPoints[i], pathPoints[i+1], angle, shp))
 		angle = (angle+increment)%(2*pi)
 
 	if path.isClosed():
@@ -160,7 +166,6 @@ class PathHelix:
 		obj.addProperty("App::PropertyBool", "Reverse", "Dimensions").Reverse=False
 		obj.addProperty("App::PropertyBool", "Join", "Dimensions").Join=True
 		obj.addProperty("App::PropertyLink", "FillShape", "Fill")
-		obj.addProperty("App::PropertyBool", "UseMax", "Fill")
 
 
 	def onDocumentRestored(self, obj):
@@ -176,9 +181,6 @@ class PathHelix:
 		if (not hasattr(obj,"FillShape")):
 			obj.addProperty("App::PropertyLink", "FillShape", "Fill")
 
-		if (not hasattr(obj,"UseMax")):
-			obj.addProperty("App::PropertyBool", "UseMax", "Fill")
-
 		if (not hasattr(obj,"Resolution")):
 			obj.addProperty("App::PropertyInteger", "Resolution", "Dimensions")
 
@@ -187,7 +189,7 @@ class PathHelix:
 		if obj.FillShape:
 			if obj.Resolution<4:
 				obj.Resolution=16
-			w=FillHelix(obj.Spine.Shape, obj.Pitch, obj.FillShape, rotation=obj.Rotation*pi/180, direction= -1 if(obj.Reverse) else 1, res=obj.Resolution, minmax=1 if obj.UseMax else 0)
+			w=FillHelix(obj.Spine.Shape, obj.Pitch, obj.FillShape, rotation=obj.Rotation*pi/180, direction= -1 if(obj.Reverse) else 1, res=obj.Resolution)
 		else:
 			edge=None
 			if obj.Resolution<4:
