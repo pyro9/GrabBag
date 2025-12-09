@@ -138,7 +138,13 @@ def FillHelix(path, pitch, shape, rotation=0, direction=1, res=128, minmax=0):
 		radialPoints.append(radialPoints[0])
 
 	b = Part.BSplineCurve(radialPoints)
-	return b.toShape()
+
+	# need to approximate the BSplineCurve so it can work in a sweep
+	c=b.toBiArcs(0.001)
+	e=[ i.toBSpline(i.FirstParameter, i.LastParameter) for i in c]
+	c=e[0]
+	[ c.join(i) for i in e[1:]]
+	return c.toShape()
 
 class PathHelix:
 	def __init__(self, obj):
