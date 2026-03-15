@@ -61,13 +61,15 @@ class WireBinder:
 			except:
 				pass
 			obj.recompute()
-		if name=="Add" and obj.Add==True and obj.Wire!=-1:
+
+		if name == "Add" and obj.Add==True:
 			obj.Add=False
-			if not obj.Wire in obj.Wires:
-				l = obj.Wires
-				l.append(obj.Wire)
-				obj.Wires=l
-				obj.recompute()
+			if obj.Wire!=-1:
+				if not obj.Wire in obj.Wires:
+					l = obj.Wires
+					l.append(obj.Wire)
+					obj.Wires=l
+					obj.recompute()
 
 #		print("onChanged", name)
 		
