@@ -31,20 +31,28 @@ class WireBinder:
 		obj.addProperty("App::PropertyInteger", "Wire", "Dimensions").Wire=-1
 		obj.addProperty("App::PropertyIntegerList", "Wires", "Dimensions").Wires=[]
 		obj.addProperty("App::PropertyLinkList", "Base", "Dimensions")
-		obj.addProperty("App::PropertyBool", "Add", "Dimensions").Add=False
+		obj.addProperty("App::PropertyBool", "wAdd", "Dimensions").wAdd=False
 
 	def onDocumentRestored(self, obj):
-		pass
+		if not hasattr(obj,"Wires"):
+			obj.addProperty("App::PropertyIntegerList", "Wires", "Dimensions").Wires=[]
+
+		if not hasattr(obj,"wAdd"):
+			obj.addProperty("App::PropertyBool", "wAdd", "Dimensions").wAdd=False
 
 	def execute(self, obj):
 #		print(obj.Base)
 		p = App.Placement()
 
+		if not obj.Base[0].Shape.Wires:
+			return
+
 		wires = []
 		if obj.Wire !=-1:
 			wires = [ obj.Base[0].Shape.Wires[obj.Wire] ]
 
-		wires.extend( [ obj.Base[0].Shape.Wires[w] for w in obj.Wires ])
+		if hasattr(obj,"Wires"):
+			wires.extend( [ obj.Base[0].Shape.Wires[w] for w in obj.Wires ])
 
 		if not wires:
 			wires = obj.Base[0].Shape.Wires
@@ -54,16 +62,17 @@ class WireBinder:
 	def onChanged(self, obj, name):
 		if name=="Wire":
 			try:
-				v = min(obj.Wire,len(obj.Base[0].Shape.Wires)-1)
-				v = max(v, -1)
-				if v != obj.Wire:
-					obj.Wire=v
+				if obj.Base[0].Shape.Wires:
+					v = min(obj.Wire,len(obj.Base[0].Shape.Wires)-1)
+					v = max(v, -1)
+					if v != obj.Wire:
+						obj.Wire=v
 			except:
 				pass
 			obj.recompute()
 
-		if name == "Add" and obj.Add==True:
-			obj.Add=False
+		if name == "wAdd" and obj.wAdd==True:
+			obj.wAdd=False
 			if obj.Wire!=-1:
 				if not obj.Wire in obj.Wires:
 					l = obj.Wires
