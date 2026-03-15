@@ -29,21 +29,46 @@ class WireBinder:
 	def __init__(self, obj):
 		obj.Proxy = self
 		obj.addProperty("App::PropertyInteger", "Wire", "Dimensions").Wire=-1
+		obj.addProperty("App::PropertyIntegerList", "Wires", "Dimensions").Wires=[]
 		obj.addProperty("App::PropertyLinkList", "Base", "Dimensions")
+		obj.addProperty("App::PropertyBool", "Add", "Dimensions").Add=False
 
 	def onDocumentRestored(self, obj):
 		pass
 
 	def execute(self, obj):
 #		print(obj.Base)
-		if obj.Wire==-1:
-			p = App.Placement()
-			obj.Shape = Part.makeCompound( [ fixPlacement(w,p) for w in obj.Base[0].Shape.Wires])
-		else:
-			obj.Shape = obj.Base[0].Shape.Wires[obj.Wire]
+		p = App.Placement()
+
+		wires = []
+		if obj.Wire !=-1:
+			wires = [ obj.Base[0].Shape.Wires[obj.Wire] ]
+
+		wires.extend( [ obj.Base[0].Shape.Wires[w] for w in obj.Wires ])
+
+		if not wires:
+			wires = obj.Base[0].Shape.Wires
+
+		obj.Shape = Part.makeCompound( [ fixPlacement(w,p) for w in wires])
 
 	def onChanged(self, obj, name):
-		pass
+		if name=="Wire":
+			try:
+				v = min(obj.Wire,len(obj.Base[0].Shape.Wires)-1)
+				v = max(v, -1)
+				if v != obj.Wire:
+					obj.Wire=v
+			except:
+				pass
+			obj.recompute()
+		if name=="Add" and obj.Add==True and obj.Wire!=-1:
+			obj.Add=False
+			if not obj.Wire in obj.Wires:
+				l = obj.Wires
+				l.append(obj.Wire)
+				obj.Wires=l
+				obj.recompute()
+
 #		print("onChanged", name)
 		
 class ViewProviderWireBinder:
@@ -162,6 +187,7 @@ def _create(obj, name="WireBinder"):
     WireBinder(myObj)
     myObj.Base= obj 
     myObj.Wire=-1
+    myObj.Wires=[]
     ViewProviderWireBinder(myObj.ViewObject)
     attach(myObj,obj)
     App.ActiveDocument.recompute()
