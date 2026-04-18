@@ -186,6 +186,11 @@ class SineWall:
 		return edges
 		
 	def execute(self, obj):
+		if not obj.Base:	# not yet assigned.
+			return
+
+		self.aInc = 2*pi/obj.granularity
+
 		self.cg = obj.Base[0].Shape.CenterOfGravity
 		edges = self._getEdges(obj)
 		
@@ -341,7 +346,7 @@ else:
 				}
 		
 		def Activated(self):
-			CreateRibThread(name = "SineWall")
+			CreateSineWall(name = "SineWall")
 		    
 		def IsActive(self):
 			return True
