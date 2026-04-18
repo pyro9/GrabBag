@@ -102,7 +102,8 @@ class SineWall:
 		obj.granularity=64
 		self.aInc = 2*pi/obj.granularity
 
-#		obj.addProperty("App::PropertyBool", "debug", "Dimensions")
+		obj.addProperty("App::PropertyBool", "debug", "Dimensions")
+		obj.debug=False
 
 
 #	def onDocumentRestored(self, obj):
@@ -123,6 +124,8 @@ class SineWall:
 		return P+(vec*amplitude)
 
 	def _ComputeEdge(self, obj, edge):
+		if obj.debug:
+			print(f"Edge:%{edge}, Length: %{edge.Length}")
 		start,end = edge.ParameterRange
 		prange = end-start
 		count = int(edge.Length/obj.Wavelength)
@@ -259,6 +262,8 @@ class ViewProviderSineWall:
 		App.Console.PrintMessage("Change property: " + str(prop) + "\n")
 
 	def claimChildren(self):
+		if self.fp.Base:
+			return [ self.fp.Base[0] ]
 		return None
 
 	def getIcon(self):
