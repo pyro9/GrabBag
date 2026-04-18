@@ -9,6 +9,7 @@ import RibThread
 import TearDrop
 import BiArc
 import Recompose
+import SineWall
 #import PlaceEdges
 
 print("This is a test!")
