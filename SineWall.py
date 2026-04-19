@@ -22,67 +22,6 @@ import os
 from pathlib import Path
 from math import pi, sin,radians
 
-"""
-class SignWall:
-	def __init__(self, shape, edges):
-		self.shape = shape
-		self.cg = self.shape.CenterOfGravity
-		self.Wavelength=5
-		self.Amplitude=5
-		self.granularity=64
-		self.phase= radians(180)
-		self.aInc = 2*pi/self.granularity
-		
-	def ComputeOutVec(self,edge, param):
-		P=edge.valueAt(param)
-		vc = (self.cg-P).normalize()
-		t = edge.tangentAt(param)
-		hinge = t.cross(vc).normalize()
-		return t.cross(hinge).normalize()
-		
-	def ComputeSinglePoint(self,edge, param, amplitude):
-		vec = self.ComputeOutVec(edge,param)
-		P=edge.valueAt(param)
-		return P+(vec*amplitude)
-		
-	def ComputeEdge(self,edge):
-		start,end = edge.ParameterRange
-		prange = end-start
-#		count = int(edge.Length*self.granularity/self.Wavelength)	# *4 to get 4 samples per wavelength
-		count = int(edge.Length/self.Wavelength)
-		count *= self.granularity
-#		print(f"count=%{count}")
-		pInc = prange/count
-
-		def ComputeAval(i):
-			return sin((i%self.granularity)*self.aInc + 3*pi/2 + self.phase)+1
-						
-		return [ self.ComputeSinglePoint(edge,start+(pInc*i), self.Amplitude*ComputeAval(i)) for i in range(count)]
-
-	def compute(self):
-		bs=Part.BSplineCurve()
-		pts=[]
-		for e in self.shape.Edges:
-			pts.extend(self.ComputeEdge(e))
-		
-		#dirty test
-#		ptc=[Part.Vertex(p) for p in pts]
-#		Part.show(Part.makeCompound(ptc))
-		#end dirty test
-
-		pts.append(pts[0])	# close the loop.
-		bs = Part.BSplineCurve(pts)
-		return bs.approximateBSpline(0.2,len(pts)//10,3,'C0') # caution, len(pts)/10 guessed empirically!
-
-		
-
-
-#o=SignWall(sel.Object.Shape, sel.Object.Shape.Edges)
-
-#c=o.compute()
-#Part.show(c.toShape())
-"""
-
 class SineWall:
 	def __init__(self, obj):
 		obj.Proxy = self
@@ -105,6 +44,8 @@ class SineWall:
 		obj.addProperty("App::PropertyBool", "debug", "Dimensions")
 		obj.debug=False
 
+		obj.addProperty("App::PropertyBool", "update", "Dimensions")
+		obj.update=False
 
 #	def onDocumentRestored(self, obj):
 #		if (not hasattr(obj,"Reverse")):
@@ -214,7 +155,8 @@ class SineWall:
 #		obj.Shape=computeShape(dia/2, drill/2, obj.Height, obj.RibCount, obj.BoreDepth, obj.invert, obj.debug)
 
 	def onChanged(self, obj, name):
-		pass
+		if obj.update and name in ['Amplitude', 'Phase', 'Wavelength']:
+			obj.recompute(True)
 		
 class ViewProviderSineWall:
 
