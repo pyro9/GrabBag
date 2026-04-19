@@ -22,7 +22,7 @@ import os
 from pathlib import Path
 from math import pi, sin,radians
 
-
+"""
 class SignWall:
 	def __init__(self, shape, edges):
 		self.shape = shape
@@ -81,7 +81,7 @@ class SignWall:
 
 #c=o.compute()
 #Part.show(c.toShape())
-
+"""
 
 class SineWall:
 	def __init__(self, obj):
@@ -124,12 +124,13 @@ class SineWall:
 		return P+(vec*amplitude)
 
 	def _ComputeEdge(self, obj, edge):
-		if obj.debug:
-			print(f"Edge:%{edge}, Length: %{edge.Length}")
 		start,end = edge.ParameterRange
 		prange = end-start
 		count = int(edge.Length/obj.Wavelength)
 		count *= obj.granularity
+
+		if not count:
+			return [ edge.valueAt(start), edge.valueAt(end) ]
 		pInc = prange/count
 
 		def ComputeAval(i):
@@ -150,7 +151,10 @@ class SineWall:
 
 		pts.append(pts[0])	# close the loop.
 		bs = Part.BSplineCurve(pts)
-		return bs.approximateBSpline(0.2,len(pts)//10,3,'C0') # caution, len(pts)/10 guessed empirically!
+		try:
+			return bs.approximateBSpline(0.2,len(pts)//10,3,'C0') # caution, len(pts)/10 guessed empirically!
+		except:
+			return bs
 		
 	def _computeDiscreet(self, obj, edges):
 		bss=[]
@@ -226,6 +230,7 @@ class ViewProviderSineWall:
 		"""
 		Setup the scene sub-graph of the view provider, this method is mandatory
 		"""
+		self.fp = obj.Object
 		return
 
 	def updateData(self, fp, prop):
@@ -284,7 +289,7 @@ class ViewProviderSineWall:
 		Called during document restore.
 		"""
 
-def _create(name='SineWall'):
+def _create(Base, name='SineWall'):
 #	sel2 = FreeCADGui.Selection.getSelection()[0] 
 #	print("sel2=",sel2)
 
@@ -292,8 +297,9 @@ def _create(name='SineWall'):
 	SineWall(myObj)
 	myObj.Amplitude=1
 	myObj.Wavelength=10
+	myObj.Base = Base
 	ViewProviderSineWall(myObj.ViewObject)
-	App.ActiveDocument.recompute()
+	myObj.recompute(True)
 	return myObj
 
 
@@ -313,8 +319,7 @@ def create(name='SineWall'):
 
 	for sel in sel2:
 		print("sel=",sel)
-		o=_create(name)
-		o.Base = (sel.Object, sel.SubElementNames )
+		o=_create((sel.Object, sel.SubElementNames ), name)
 
 # -------------------------- Gui command --------------------------------------------------
 
