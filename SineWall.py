@@ -166,7 +166,6 @@ class ViewProviderSineWall:
 		"""
 
 		obj.Proxy = self
-		self.fp = obj.Object
 
 	def attach(self, obj):
 		"""
