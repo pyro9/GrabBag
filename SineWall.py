@@ -52,6 +52,10 @@ class SineWall:
 #			obj.addProperty("App::PropertyBool", "Reverse", "Dimensions").Reverse=False
 #		obj.ViewObject.Proxy.fp = obj
 
+	def isConvex(self, edge, face, param=0):
+		p = edge.centerOfCurvature(param)
+		return face.isInside(p,0,false)
+
 	def _ComputeOutVec(self,edge, param):
 		P=edge.valueAt(param)
 		vc = (self.cg-P).normalize()
@@ -60,8 +64,14 @@ class SineWall:
 		return t.cross(hinge).normalize()
 
 	def _ComputeSinglePoint(self,edge, param, amplitude):
-		vec = self._ComputeOutVec(edge,param)
+#		vec = self._ComputeOutVec(edge,param)
 		P=edge.valueAt(param)
+		try:
+			vec = edge.normalAt(param)
+		except Exception as E:
+#			print (E)
+			vec = self._ComputeOutVec(edge,param)
+
 		return P+(vec*amplitude)
 
 	def _ComputeEdge(self, obj, edge):
