@@ -53,8 +53,8 @@ class SineWall:
 #		obj.ViewObject.Proxy.fp = obj
 
 	def isConvex(self, edge, face, param=0):
-		p = edge.centerOfCurvature(param)
-		return face.isInside(p,0,false)
+		p = edge.centerOfCurvatureAt(param)
+		return face.isInside(p,0,False)
 
 	def _ComputeOutVec(self,edge, param):
 		P=edge.valueAt(param)
@@ -63,18 +63,21 @@ class SineWall:
 		hinge = t.cross(vc).normalize()
 		return t.cross(hinge).normalize()
 
-	def _ComputeSinglePoint(self,edge, param, amplitude):
+	def _ComputeSinglePoint(self,edge, param, face, amplitude):
 #		vec = self._ComputeOutVec(edge,param)
 		P=edge.valueAt(param)
 		try:
 			vec = edge.normalAt(param)
+			if self.isConvex(edge, face, param):
+				vec = -vec
 		except Exception as E:
-#			print (E)
+			print (E)
+			self.cg=face.CenterOfGravity
 			vec = self._ComputeOutVec(edge,param)
 
 		return P+(vec*amplitude)
 
-	def _ComputeEdge(self, obj, edge):
+	def _ComputeEdge(self, obj, edge, face):
 		start,end = edge.ParameterRange
 		prange = end-start
 		count = int(edge.Length/obj.Wavelength)
@@ -87,19 +90,25 @@ class SineWall:
 		def ComputeAval(i):
 			return sin((i%obj.granularity)*self.aInc + 3*pi/2 + radians(obj.Phase))+1
 						
-		return [ self._ComputeSinglePoint(edge,start+(pInc*i), obj.Amplitude*ComputeAval(i)) for i in range(count)]
+		return [ self._ComputeSinglePoint(edge,start+(pInc*i), face, obj.Amplitude*ComputeAval(i)) for i in range(count)]
 
-	def _compute(self, obj, edges):
+	def _compute(self, obj, edges):	# edges is a list of tuples ( edge, parent face of edge)
 		bs=Part.BSplineCurve()
 		pts=[]
-		for e in edges:
-			pts.extend(self._ComputeEdge(obj, e))
+		for e,f in edges:
+			p1 = self._ComputeEdge(obj, e,f)
+			if pts and (p1[0]-pts[-1]).Length > (p1[-1]-pts[-1]).Length:	# if the end of the new segment is closer than the beginning (The edge is reversed)
+				p1.reverse()
+			pts.extend(p1)
 		
 		#dirty test
 #		ptc=[Part.Vertex(p) for p in pts]
 #		Part.show(Part.makeCompound(ptc))
 		#end dirty test
 
+		if obj.debug:
+			bs1=Part.BSplineCurve(pts)
+			Part.show(bs1.toShape())
 		pts.append(pts[0])	# close the loop.
 		bs = Part.BSplineCurve(pts)
 		try:
@@ -109,37 +118,63 @@ class SineWall:
 		
 	def _computeDiscreet(self, obj, edges):
 		bss=[]
-		for e in edges:
-			pts=self._ComputeEdge(obj, e)
-			pts.append(pts[0])	# close the curve
+		for e,f in edges:
+			pts=self._ComputeEdge(obj, e,f)
+#			pts.append(pts[0])	# close the curve
 			bs=Part.BSplineCurve(pts)
 			bss.append(bs.approximateBSpline(0.2, len(pts)//10, 3, 'C0'))	# caution, len(pts)/10 guessed empirically!
 			
 		return bss
 		
+	def _edgeInFace(self, edge, face):
+		for i in face.Edges:
+			if edge.isSame(i):
+				return True
+		return False
+
+	def _faceForEdge(self, edge, faces):
+		for f in faces:
+			if self._edgeInFace(edge, f):
+				return f
+		return None
+	
 	def _getEdges(self, obj):
 		if not obj.Base[1]:
+			edges=[]
+			faces = Part.makeFace(obj.Base[0].Shape).Faces
+			for e in obj.Base[0].Shape.Edges:
+				edges.append( (e, self._faceForEdge(e, faces) ))
+		
 			self.discreet=False
-			return obj.Base[0].Shape.Edges
+			return edges
 			
 		edges=[]
 		shp=obj.Base[0].Shape
-		for e in obj.Base[1]:
-			if 'Edge' in e:
+		faces = Part.makeFace(shp).Faces
+		print(faces)
+		for element in obj.Base[1]:
+			if 'Edge' in element:
 				self.discreet=True
-				i=int(e[4:])-1
-				edges.append(shp.Edges[i])
+				i=int(element[4:])-1
+				e = shp.Edges[i]
+				f=self._faceForEdge(e,faces)
+				if not f:
+					raise Exception("Edges must be part of a face")
+				edges.append( (e,f) )
 				
-			elif 'InternalFace' in e:
+			elif 'InternalFace' in element:
 				self.discreet=False
-				i = int(e[12:])
-				edges.extend( obj.Base[0].InternalShape.Faces[i].Edges)
+				i = int(element[12:])
+				f = obj.Base[0].InternalShape.Faces[i]
+				for e in f.Edges:
+					edges.append( (e,f) )
 				
-			elif 'Face' in e:
+			elif 'Face' in element:
 				self.discreet=False
-				i=int(e[4:])-1
-				edges.extend( shp.Faces[i].Edges)
-
+				i=int(element[4:])-1
+				f = shp.Faces[i]
+				for e in f.Edges:
+					edges.append( (e,f) )
 				
 		return edges
 		
