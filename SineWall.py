@@ -101,11 +101,6 @@ class SineWall:
 				p1.reverse()
 			pts.extend(p1)
 		
-		#dirty test
-#		ptc=[Part.Vertex(p) for p in pts]
-#		Part.show(Part.makeCompound(ptc))
-		#end dirty test
-
 		if obj.debug:
 			bs1=Part.BSplineCurve(pts)
 			Part.show(bs1.toShape())
@@ -164,8 +159,10 @@ class SineWall:
 				
 			elif 'InternalFace' in element:
 				self.discreet=False
-				i = int(element[12:])
+				i = int(element[12:])-1
 				f = obj.Base[0].InternalShape.Faces[i]
+				# internal geometry doesn't get the Placement auto-applied, so we do it ourselves...
+				f.transformShape(obj.Base[0].Placement.Matrix)
 				for e in f.Edges:
 					edges.append( (e,f) )
 				
@@ -196,7 +193,6 @@ class SineWall:
 			obj.Shape = bs.toShape()
 			
 #		obj.Placement=obj.Base[0].Placement
-				
 #		obj.Shape=computeShape(dia/2, drill/2, obj.Height, obj.RibCount, obj.BoreDepth, obj.invert, obj.debug)
 
 	def onChanged(self, obj, name):
