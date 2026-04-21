@@ -70,8 +70,8 @@ class SineWall:
 			vec = edge.normalAt(param)
 			if self.isConvex(edge, face, param):
 				vec = -vec
-		except Exception as E:
-			print (E)
+		except Part.OCCError as E:
+#			print (f"Exception type:{type(E)}, E={E}")
 			self.cg=face.CenterOfGravity
 			vec = self._ComputeOutVec(edge,param)
 
@@ -99,6 +99,8 @@ class SineWall:
 			p1 = self._ComputeEdge(obj, e,f)
 			if pts and (p1[0]-pts[-1]).Length > (p1[-1]-pts[-1]).Length:	# if the end of the new segment is closer than the beginning (The edge is reversed)
 				p1.reverse()
+			if pts and (p1[0]-pts[-1]).Length > (p1[0] - pts[0]).Length:	# if the first one is backward compared to the second one
+				pts.reverse()
 			pts.extend(p1)
 		
 		if obj.debug:
