@@ -142,7 +142,8 @@ class SineWall:
 			
 		edges=[]
 		shp=obj.Base[0].Shape
-		faces = Part.makeFace(shp).Faces
+#		faces = Part.makeFace(shp).Faces
+		faces = shp.Faces
 		print(faces)
 		for element in obj.Base[1]:
 			if 'Edge' in element:
@@ -184,6 +185,7 @@ class SineWall:
 		if self.discreet:
 			bss = self._computeDiscreet(obj, edges)
 			c = Part.makeCompound([ bs.toShape() for bs in bss ])
+			print(type(c),c)
 			obj.Shape=c
 		else:
 			bs = self._compute(obj, edges)
