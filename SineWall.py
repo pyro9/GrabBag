@@ -62,8 +62,9 @@ class SineWall:
 	def _ComputeSinglePoint(self,edge, param, face, amplitude):
 		P=edge.valueAt(param)
 		try:
-			vec = edge.normalAt(param)
-			if face.isInside(vec+P, 0.01, True):
+#			vec = edge.normalAt(param)
+			vec = self._ComputeOutVec(edge,param)
+			if face.isInside(vec+P, 0.05, True):
 				vec = -vec
 		except Part.OCCError as E:
 #			print (f"Exception type:{type(E)}, E={E}")
