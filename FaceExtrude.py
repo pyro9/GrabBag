@@ -29,6 +29,7 @@ class FaceExtrude:
 		obj.addProperty("App::PropertyLink", "Base", "Dimensions")
 		obj.addProperty("App::PropertyInteger", "Face", "Dimensions")
 		obj.addProperty("App::PropertyBool", "Reverse", "Dimensions").Reverse=False
+		self.Internal=False
 
 
 	def onDocumentRestored(self, obj):
@@ -37,7 +38,11 @@ class FaceExtrude:
 		obj.ViewObject.Proxy.fp = obj
 
 	def execute(self, obj):
-		f = obj.Base.Shape.Faces[obj.Face]
+		if self.Internal:
+			f = obj.Base.InternalShape.Faces[obj.Face]
+			f.transformShape( obj.Base.Placement.Matrix)
+		else:
+			f = obj.Base.Shape.Faces[obj.Face]
 		n = f.normalAt(1,1)
 		obj.Shape=f.extrude(obj.Length*n)
 
@@ -52,9 +57,9 @@ class ViewProviderFaceExtrude:
         """
 
         obj.Proxy = self
-        self.fp = obj.Object
 
     def attach(self, obj):
+        self.fp = obj
         """
         Setup the scene sub-graph of the view provider, this method is mandatory
         """
@@ -157,7 +162,11 @@ def create(name="FaceExtrude"):
     myObj.Offset=0
     myObj.Length=2
     myObj.Base=sel2.Object
-    myObj.Face = int(sel2.SubElementNames[0][4:])-1
+    if 'Internal' in sel2.SubElementNames[0]:
+        myObj.Proxy.Internal=True
+        myObj.Face = int(sel2.SubElementNames[0][12:])-1
+    else:
+        myObj.Face = int(sel2.SubElementNames[0][4:])-1
     ViewProviderFaceExtrude(myObj.ViewObject)
     App.ActiveDocument.recompute()
 
