@@ -45,6 +45,12 @@ def computeShape(Object, sub, length, reverse=False, angle=0, U=0, V=0):
 		f=Part.makeFace(edge)
 		norm = f.normalAt(1,1)
 		v = Part.Vertex(f.CenterOfMass)
+	elif "InternalFace" in sub:
+		ix = int(sub[12:])
+		f = Object.InternalShape.Faces[ix-1]
+		f.transformShape(Object.Placement.Matrix)
+		norm = f.normalAt(U,V)
+		v = Part.Vertex(f.valueAt(U,V))
 	elif "Face" in sub:
 		ix = int(sub[4:])
 		f = Object.Shape.Faces[ix-1]
@@ -89,8 +95,13 @@ class NormalLine:
 		o=obj.Base[0][0]
 		sub=obj.Base[0][1][0]
 		if "Face" in sub:
-			ix = int(sub[4:])
-			f = o.Shape.Faces[ix-1]
+			if 'Internal' in sub:
+				ix = int(sub[12:])
+				f = o.InternalShape.Faces[ix-1]
+				f.transformShape(o.Placement.Matrix)
+			else:
+				ix = int(sub[4:])
+				f = o.Shape.Faces[ix-1]
 			(umin,umax,vmin,vmax) = f.ParameterRange
 			if obj.U < umin:
 				obj.U = umin
