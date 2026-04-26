@@ -37,6 +37,8 @@ class SineWall:
 		obj.addProperty("App::PropertyFloat", "Phase", "Dimensions")
 		obj.Phase=0
 
+		obj.addProperty("App::PropertyBool", "CutCorners", "Dimensions").CutCorners=False
+
 		obj.addProperty("App::PropertyInteger", "granularity", "Dimensions")
 		obj.granularity=64
 		self.aInc = 2*pi/obj.granularity
@@ -80,7 +82,19 @@ class SineWall:
 		def ComputeAval(i):
 			return sin((i%obj.granularity)*self.aInc + 3*pi/2 + radians(obj.Phase))+1
 						
-		return [ self._ComputeSinglePoint(edge,start+(pInc*i), face, obj.Amplitude*ComputeAval(i)) for i in range(count)]
+		res =  [ self._ComputeSinglePoint(edge,start+(pInc*i), face, obj.Amplitude*ComputeAval(i)) for i in range(count)]
+		if obj.CutCorners:
+			P = edge.valueAt(start)
+			if not P == res[0]:
+				Q = [P]
+				Q.extend(res)
+				res = Q
+				print(res)
+			P = edge.valueAt(end)
+			if not P == res[-1]:
+				res.extend([P])
+
+		return res
 
 	def _compute(self, obj, edges):	# edges is a list of tuples ( edge, parent face of edge)
 		bs=Part.BSplineCurve()
