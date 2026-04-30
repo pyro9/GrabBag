@@ -38,6 +38,7 @@ class SineWall:
 		obj.Phase=0
 
 		obj.addProperty("App::PropertyBool", "CutCorners", "Dimensions").CutCorners=False
+		obj.addProperty("App::PropertyBool", "AlternatePhase", "Dimensions").AlternatePhase=False
 
 		obj.addProperty("App::PropertyInteger", "granularity", "Dimensions")
 		obj.granularity=64
@@ -69,18 +70,25 @@ class SineWall:
 
 		return P+(vec*amplitude)
 
-	def _ComputeEdge(self, obj, edge, face):
+	def _ComputeEdge(self, obj, edge, face, phase=-1):
+		if phase<0:
+			phase=obj.Phase
 		start,end = edge.ParameterRange
 		prange = end-start
-		count = int(edge.Length/obj.Wavelength)
-		count *= obj.granularity
+#		count = int(edge.Length/obj.Wavelength)
+#		count *= obj.granularity
+		count = int( (edge.Length/obj.Wavelength) * obj.granularity)
+#		print(count, ( (edge.Length/obj.Wavelength) * obj.granularity))
 
 		if not count:
 			return [ edge.valueAt(start), edge.valueAt(end) ]
 		pInc = prange/count
+		# now, recompute count
+#		count = int(edge.Length/obj.Wavelength)
+#		count *= obj.granularity
 
 		def ComputeAval(i):
-			return sin((i%obj.granularity)*self.aInc + 3*pi/2 + radians(obj.Phase))+1
+			return sin((i%obj.granularity)*self.aInc + 3*pi/2 + radians(phase))+1
 						
 		res =  [ self._ComputeSinglePoint(edge,start+(pInc*i), face, obj.Amplitude*ComputeAval(i)) for i in range(count)]
 		if obj.CutCorners:
@@ -97,10 +105,13 @@ class SineWall:
 		return res
 
 	def _compute(self, obj, edges):	# edges is a list of tuples ( edge, parent face of edge)
+		phase = obj.Phase
 		bs=Part.BSplineCurve()
 		pts=[]
 		for e,f in edges:
-			p1 = self._ComputeEdge(obj, e,f)
+			p1 = self._ComputeEdge(obj, e,f, phase)
+			if obj.AlternatePhase:
+				phase = (phase+180)%360
 			if pts and (p1[0]-pts[-1]).Length > (p1[-1]-pts[-1]).Length:	# if the end of the new segment is closer than the beginning (The edge is reversed)
 				p1.reverse()
 			if pts and (p1[0]-pts[-1]).Length > (p1[0] - pts[0]).Length:	# if the first one is backward compared to the second one
