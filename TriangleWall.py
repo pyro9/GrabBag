@@ -34,8 +34,8 @@ class TriangleWall:
 		obj.addProperty("App::PropertyFloat", "Wavelength", "Dimensions")
 		obj.Wavelength=10
 
-		obj.addProperty("App::PropertyFloat", "Phase", "Dimensions")
-		obj.Phase=0
+		obj.addProperty("App::PropertyBool", "Phase", "Dimensions")
+		obj.Phase=False
 
 		obj.addProperty("App::PropertyBool", "CutCorners", "Dimensions").CutCorners=False
 		obj.addProperty("App::PropertyBool", "AlternatePhase", "Dimensions").AlternatePhase=False
@@ -70,21 +70,6 @@ class TriangleWall:
 
 		return P+(vec*amplitude)
 
-#	def tri(self,i):	# generate triangle wave of period 2pi
-#		invert=1
-#		complement=False
-#
-#		if i>pi:
-#			invert=-1
-#			i-=pi
-#
-#		if i>pi/2:
-#			res = 2*(pi-i)/pi
-#		else:
-#			res = 2*i/pi
-#
-#		return invert*res
-
 	def tri(self,x):
 		return 2* asin(sin(x)) /pi
 			
@@ -94,27 +79,19 @@ class TriangleWall:
 			phase=obj.Phase
 		start,end = edge.ParameterRange
 		prange = end-start
-#		count = int(edge.Length/obj.Wavelength)
-#		count *= obj.granularity
-		count = int( (edge.Length/obj.Wavelength) * 3)
-#		print(count, ( (edge.Length/obj.Wavelength) * obj.granularity))
+		count = int( (edge.Length/obj.Wavelength) * 2 +0.001)
 
 		if not count:
 			return [ edge.valueAt(start), edge.valueAt(end) ]
 		pInc = prange/count
-		# now, recompute count
-#		count = int(edge.Length/obj.Wavelength)
-#		count *= obj.granularity
 
 
 		res=[]
-		for i in range(count):
-			if not i%2:
+		for i in range(count+1):
+			if not i%2^phase:
 				res.append(edge.valueAt(start+pInc*i))
-#				Part.show(Part.Vertex(edge.valueAt(start+pInc*i)))
 			else:
 				P = self._ComputeSinglePoint(edge, start+pInc*i, face, obj.Amplitude)
-#				Part.show(Part.Vertex(P))
 				res.append(P)
 				
 		if obj.CutCorners:
@@ -136,7 +113,7 @@ class TriangleWall:
 		for e,f in edges:
 			p1 = self._ComputeEdge(obj, e,f, phase)
 			if obj.AlternatePhase:
-				phase = (phase+180)%360
+				phase = not phase
 			if pts and (p1[0]-pts[-1]).Length > (p1[-1]-pts[-1]).Length:	# if the end of the new segment is closer than the beginning (The edge is reversed)
 				p1.reverse()
 			if pts and (p1[0]-pts[-1]).Length > (p1[0] - pts[0]).Length:	# if the first one is backward compared to the second one
@@ -161,8 +138,8 @@ class TriangleWall:
 		for e,f in edges:
 			pts=self._ComputeEdge(obj, e,f)
 #			pts.append(pts[0])	# close the curve
-			bs=Part.BSplineCurve(pts)
-			bss.append(bs.approximateBSpline(0.2, len(pts)//10, 3, 'C0'))	# caution, len(pts)/10 guessed empirically!
+			bs=Part.makePolygon(pts)
+			bss.append(bs)
 			
 		return bss
 		
@@ -232,7 +209,7 @@ class TriangleWall:
 		
 		if self.discreet:
 			bss = self._computeDiscreet(obj, edges)
-			c = Part.makeCompound([ bs.toShape() for bs in bss ])
+			c = Part.makeCompound()
 			print(type(c),c)
 			obj.Shape=c
 		else:
