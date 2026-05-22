@@ -80,7 +80,7 @@ class TriangleWall:
 		start,end = edge.ParameterRange
 		prange = end-start
 #		count = int( (edge.Length/obj.Wavelength) * 2 +0.001)
-		count = int((edge.Length//obj.Wavelength) * 2 +0.001)
+		count = int((edge.Length/obj.Wavelength)+ 0.001) *2
 
 		if not count:
 			return [ edge.valueAt(start), edge.valueAt(end) ]
