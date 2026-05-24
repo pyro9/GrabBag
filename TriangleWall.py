@@ -1,5 +1,5 @@
-#   Copyright (c) 2026 Steven James <pyro@4axisprinting.com>        
-#                                                                         
+#   Copyright (c) 2026 Steven James <pyro@4axisprinting.com>
+#
 #   This library is free software; you can redistribute it and/or
 #   modify it under the terms of the GNU Library General Public
 #   License as published by the Free Software Foundation; either
@@ -14,7 +14,7 @@
 #   License along with this library; see the file COPYING.LIB. If not,
 #   write to the Free Software Foundation, Inc., 59 Temple Place,
 #   Suite 330, Boston, MA  02111-1307, USA
-#                                                                         
+#
 
 import Draft, Part, FreeCADGui
 import FreeCAD as App
@@ -50,10 +50,8 @@ class TriangleWall:
 		obj.addProperty("App::PropertyBool", "update", "Dimensions")
 		obj.update=False
 
-#	def onDocumentRestored(self, obj):
-#		if (not hasattr(obj,"Reverse")):
-#			obj.addProperty("App::PropertyBool", "Reverse", "Dimensions").Reverse=False
-#		obj.ViewObject.Proxy.fp = obj
+	def onDocumentRestored(self, obj):
+		pass
 
 	def _ComputeOutVec(self,edge, param):
 		P=edge.valueAt(param)
@@ -72,8 +70,7 @@ class TriangleWall:
 
 	def tri(self,x):
 		return 2* asin(sin(x)) /pi
-			
-		
+
 	def _ComputeEdge(self, obj, edge, face, phase=-1):
 		if phase<0:
 			phase=obj.Phase
@@ -95,7 +92,7 @@ class TriangleWall:
 			else:
 				P = self._ComputeSinglePoint(edge, start+pInc*i, face, obj.Amplitude)
 				res.append(P)
-				
+
 		if obj.CutCorners:
 			P = edge.valueAt(start)
 			if not P == res[0]:
@@ -121,7 +118,7 @@ class TriangleWall:
 			if pts and (p1[0]-pts[-1]).Length > (p1[0] - pts[0]).Length:	# if the first one is backward compared to the second one
 				pts.reverse()
 			pts.extend(p1)
-		
+
 		pts.append(pts[0])	# close the loop.
 
 		return Part.makePolygon(pts)
@@ -134,7 +131,7 @@ class TriangleWall:
 
 		c = Part.makeCompound(sh)
 		return c
-		
+
 	def _computeDiscreet(self, obj, edges):
 		bss=[]
 		for e,f in edges:
@@ -142,9 +139,9 @@ class TriangleWall:
 #			pts.append(pts[0])	# close the curve
 			bs=Part.makePolygon(pts)
 			bss.append(bs)
-			
+
 		return bss
-		
+
 	def _edgeInFace(self, edge, face):
 		for i in face.Edges:
 			if edge.isSame(i):
@@ -156,17 +153,17 @@ class TriangleWall:
 			if self._edgeInFace(edge, f):
 				return f
 		return None
-	
+
 	def _getEdges(self, obj):
 		if not obj.Base[1]:
 			edges=[]
 			faces = Part.makeFace(obj.Base[0].Shape).Faces
 			for e in obj.Base[0].Shape.Edges:
 				edges.append( (e, self._faceForEdge(e, faces) ))
-		
+
 			self.discreet=False
 			return edges
-			
+
 		edges=[]
 		shp=obj.Base[0].Shape
 #		faces = Part.makeFace(shp).Faces
@@ -181,7 +178,7 @@ class TriangleWall:
 				if not f:
 					raise Exception("Edges must be part of a face")
 				edges.append( (e,f) )
-				
+
 			elif 'InternalFace' in element:
 				self.discreet=False
 				i = int(element[12:])-1
@@ -190,16 +187,16 @@ class TriangleWall:
 				f.transformShape(obj.Base[0].Placement.Matrix)
 				for e in f.Edges:
 					edges.append( (e,f) )
-				
+
 			elif 'Face' in element:
 				self.discreet=False
 				i=int(element[4:])-1
 				f = shp.Faces[i]
 				for e in f.Edges:
 					edges.append( (e,f) )
-				
+
 		return edges
-		
+
 	def execute(self, obj):
 		if not obj.Base:	# not yet assigned.
 			return
@@ -208,7 +205,7 @@ class TriangleWall:
 
 		self.cg = obj.Base[0].Shape.CenterOfGravity
 		edges = self._getEdges(obj)
-		
+
 		if self.discreet:
 			bss = self._computeDiscreet(obj, edges)
 			c = Part.makeCompound()
@@ -216,14 +213,14 @@ class TriangleWall:
 			obj.Shape=c
 		else:
 			obj.Shape = self._compute(obj, edges)
-			
+
 #		obj.Placement=obj.Base[0].Placement
 #		obj.Shape=computeShape(dia/2, drill/2, obj.Height, obj.RibCount, obj.BoreDepth, obj.invert, obj.debug)
 
 	def onChanged(self, obj, name):
 		if obj.update and name in ['Amplitude', 'Phase', 'Wavelength']:
 			obj.recompute(True)
-		
+
 class ViewProviderTriangleWall:
 
 	def __init__(self, obj):
@@ -297,9 +294,6 @@ class ViewProviderTriangleWall:
 		"""
 
 def _create(Base, name='TriangleWall'):
-#	sel2 = FreeCADGui.Selection.getSelection()[0] 
-#	print("sel2=",sel2)
-
 	myObj = App.ActiveDocument.addObject("Part::FeaturePython", name)
 	TriangleWall(myObj)
 	myObj.Amplitude=1
@@ -322,7 +316,7 @@ def attach(myObj, obj, mode='InertialCS', sub=''):
 	myObj.MapPathParameter=0
 
 def create(name='TriangleWall'):
-	sel2 = FreeCADGui.Selection.getSelectionEx() 
+	sel2 = FreeCADGui.Selection.getSelectionEx()
 
 	for sel in sel2:
 		print("sel=",sel)
@@ -361,17 +355,17 @@ else:
 				'Accel': "",
 				'ToolTip': QtCore.QT_TRANSLATE_NOOP("4axis_TriangleWall","Create a line normal to the selected feature (generally a face or a closed planar edge)")
 				}
-		
+
 		def Activated(self):
 			CreateTriangleWall(name = "TriangleWall")
-		    
+
 		def IsActive(self):
 			return True
 			if App.ActiveDocument:
 				return activeBody() is None
 			else:
 				return False
-		    
+
 	if App.GuiUp:
 		FreeCADGui.addCommand('4Axis_TriangleWall', _CommandTriangleWall())
 		print("Added Command")
