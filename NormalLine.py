@@ -73,7 +73,7 @@ def computeShape(Object, sub, length, reverse=False, angle=0, U=0, V=0):
 
 	ex = v.extrude(norm*length)
 
-	return ex
+	return ex,norm
 
 class NormalLine:
 	def __init__(self, obj):
@@ -85,6 +85,7 @@ class NormalLine:
 		obj.addProperty("App::PropertyBool", "Centered", "Dimensions").Reverse=False
 		obj.addProperty("App::PropertyFloatConstraint", "U", "Dimensions").U=(0,-100,100,1)
 		obj.addProperty("App::PropertyFloatConstraint", "V", "Dimensions").V=(0,-100,100,1)
+		obj.addProperty("App::PropertyFloatList", "Normal", "Dimensions").Normal=[0.0,0.0,0.0]
 
 
 	def onDocumentRestored(self, obj):
@@ -121,7 +122,8 @@ class NormalLine:
 				obj.U = (umax+umin)/2
 				obj.V = (vmax+vmin)/2
 			
-		obj.Shape=computeShape(o, sub, obj.Length, obj.Reverse, obj.Angle, obj.U, obj.V)
+		obj.Shape,norm = computeShape(o, sub, obj.Length, obj.Reverse, obj.Angle, obj.U, obj.V)
+		obj.Normal=[norm.x, norm.y, norm.z]
 
 	def onChanged(self, obj, name):
 		if name == "Base":
