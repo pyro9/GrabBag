@@ -15,6 +15,7 @@ Especially useful for a ShapeString copied into a polar lattice in Lattice2
 
 ## NormalLine ![NormalLine icon](/NormalLine.svg)
 Create a line normal to a face or a closed edge. A DiscretizedEdge is a special case, in that case, a line normal to the overall shape is made at every sidcrete point. The Angle parameter in the data pane can tilt the line towards/away from the geometric center of the shape.
+The Normal property is a list of floats containing the x,y, and z values of the normal vector.
 
 ## PipeLoft ![PipeLoft icon](/PipeLoft.svg)
 Lofts from one face to another in the Part workbench. Works more like the loft tool in PartDesign.
