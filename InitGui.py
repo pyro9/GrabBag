@@ -10,6 +10,7 @@ import TearDrop
 import BiArc
 import Recompose
 import SineWall
+import TriangleWall
 #import PlaceEdges
 
 print("This is a test!")
