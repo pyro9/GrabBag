@@ -32,5 +32,8 @@ Create a hole cutting tool with a slight tear drop shape at the top for improved
 ## RibThread <img src="RibThread.svg" width=64 height=64 alt="RibThread icon">
 Create a hole cutting tool that leaves ribs in the hole suitable for cutting threads with a machine bolt. Commonly used in 3D printed parts.
 
+## TriangleWall ![TriangleWall icon](TriangleWall.svg)
+Create a triangle wave pattern on the edges of a face (including a curved face) suitable for designing inter-locking parts.
+
 ## Install
 Just clone this repository in your FreeCAD/Mod directory, then (re)start FreeCAD.
