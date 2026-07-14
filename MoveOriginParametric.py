@@ -22,6 +22,28 @@ import os
 from pathlib import Path
 from math import acos
 
+def Center(shp):
+	(x1,x2,y1,y2) = shp.ParameterRange
+	x=(x2-x1)/2 + x1
+	y=(y2-y1)/2 + y1
+	return x,y
+
+def computeRotationMatrix(f):
+	v=App.Vector(0,0,-1)
+
+	r=App.Rotation(n.cross(v), Radian=acos(n*v)) #given the axis of rotation and the angle, use App.Rotation to compute the matrix that created that rotationm
+
+	return r.toMatrix()
+
+def computeMoveMatrix(shp):
+	tm = App.Matrix()
+	tm.move(shp.CenterOfGravity)
+
+	return tm.inverse()
+
+def computeTransformMatrix(f):
+	return computeRotationMatrix(f)*computeMoveMatrix(f)
+
 def MoveShape(shp, orientationFace=None, internal=False):
 	centerObject=False
 
@@ -57,7 +79,7 @@ def MoveShape(shp, orientationFace=None, internal=False):
 	
 	# now place the selected face flat on the XY plane
 	if not centerObject:
-		f=sh3.Faces[ix]
+		f=sh3.Faces[orientationFace]
 		
 		v=App.Vector(0,0,-1)	# Z axis
 		n=f.normalAt(*Center(f))
@@ -75,14 +97,14 @@ class MoveOriginParametric:
 	def __init__(self, obj):
 		obj.Proxy = self
 		obj.addProperty("App::PropertyLinkSubList", "Support", "Base")
-		obj.addProperty("App::PropertyBool", "Internal", "Base"
+		obj.addProperty("App::PropertyBool", "Internal", "Base")
 		obj.addProperty("App::PropertyInteger", "Face", "Dimensions")
 
 	def onDocumentRestored(self, obj):
 		pass
 
 	def execute(self, obj):
-		subject,subel = obj.Base
+		subject,subel = obj.Support[0]
 		f=obj.Face
 		if f<0:
 			f=None
@@ -152,7 +174,7 @@ class ViewProviderMoveOriginParametric:
 
     def claimChildren(self):
         if hasattr(self,"fp"):
-            return [ self.fp.Base ]
+            return [ self.fp.Object.Support ]
         return None
 
     def getIcon(self):
@@ -211,10 +233,10 @@ def create(name="MoveOriginParametric"):
 
     myObj = App.ActiveDocument.addObject("Part::FeaturePython", "MoveOriginParametric")
     MoveOriginParametric(myObj)
-    myObj.Support=(sel2.Object,'')
+    myObj.Support=(sel2.Object, sel2.SubElementNames)
 
-    if 'Face' in sel2.SubElementnames[0]:
-	myObj.Face = int(sel2.SubElementnames[0][4:])-1
+    if 'Face' in sel2.SubElementNames[0]:
+        myObj.Face = int(sel2.SubElementNames[0][4:])-1
 #    if 'Internal' in sel2.SubElementNames[0]:
 #        myObj.Proxy.Internal=True
 #        myObj.Face = int(sel2.SubElementNames[0][12:])-1
