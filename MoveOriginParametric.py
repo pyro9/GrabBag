@@ -111,7 +111,7 @@ class MoveOriginParametric:
 		if f>=0:
 			tm = computeMoveMatrix(subject.Shape.Faces[f])
 			rm = computeRotationMatrix(subject.Shape.Faces[f])
-			m = rm*tm
+			m = rm*tm	# NOTE: rotation matrix MUST come first
 		else:
 			m = computeTranslationMatrix(subject.Shape)
 
@@ -142,7 +142,7 @@ class ViewProviderMoveOriginParametric:
         obj.Proxy = self
 
     def attach(self, obj):
-        self.fp = obj
+        self.fp = obj.Object
         """
         Setup the scene sub-graph of the view provider, this method is mandatory
         """
@@ -183,7 +183,8 @@ class ViewProviderMoveOriginParametric:
 
     def claimChildren(self):
         if hasattr(self,"fp"):
-            return [ self.fp.Object.Support ]
+            subject,subel = self.fp.Support[0]
+            return [ subject ]
         return None
 
     def getIcon(self):
