@@ -30,6 +30,7 @@ def Center(shp):
 
 def computeRotationMatrix(f):
 	v=App.Vector(0,0,-1)
+	n=f.normalAt(*Center(f))
 
 	r=App.Rotation(n.cross(v), Radian=acos(n*v)) #given the axis of rotation and the angle, use App.Rotation to compute the matrix that created that rotationm
 
@@ -106,13 +107,21 @@ class MoveOriginParametric:
 	def execute(self, obj):
 		subject,subel = obj.Support[0]
 		f=obj.Face
-		if f<0:
-			f=None
 
-		s,m = MoveShape(subject.Shape, f, False)
+		if f>=0:
+			tm = computeMoveMatrix(subject.Shape.Faces[f])
+			rm = computeRotationMatrix(subject.Shape.Faces[f])
+			m = rm*tm
+		else:
+			m = computeTranslationMatrix(subject.Shape)
+
+		pm = subject.Placement.Matrix
+		s = subject.Shape.copy()
+		s.Placement = App.Placement()	# a new 0 placement
+		s = s.transformGeometry(m)
+
 		obj.Shape = s
-		if m:
-			obj.Placement.Matrix=m
+		obj.Placement.Matrix=pm*m.inverse()
 		
 #		if self.Internal:
 #			f = obj.Base.InternalShape.Faces[obj.Face]
