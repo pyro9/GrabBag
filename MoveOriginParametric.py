@@ -45,55 +45,6 @@ def computeMoveMatrix(shp):
 def computeTransformMatrix(f):
 	return computeRotationMatrix(f)*computeMoveMatrix(f)
 
-def MoveShape(shp, orientationFace=None, internal=False):
-	centerObject=False
-
-	if orientationFace != None:
-		f=shp.Faces[orientationFace]
-	else:
-		f = shp
-		centerObject=True
-
-
-	# undo any placement on the shape
-	m=f.Placement.Matrix
-	sh2=shp.copy()
-	sh2.Placement=App.Placement()
-
-	if centerObject:
-		f2=sh2
-	else:
-		f2=sh2.Faces[orientationFace]
-
-	# move center to origin
-
-	m2=App.Matrix()
-	m2.move(f2.CenterOfGravity)
-
-	sh3=sh2.transformGeometry(m2.inverse())
-
-	def Center(shp):
-		(x1,x2,y1,y2) = shp.ParameterRange
-		x=(x2-x1)/2 + x1
-		y=(y2-y1)/2 + y1
-		return x,y
-	
-	# now place the selected face flat on the XY plane
-	if not centerObject:
-		f=sh3.Faces[orientationFace]
-		
-		v=App.Vector(0,0,-1)	# Z axis
-		n=f.normalAt(*Center(f))
-		
-		r=App.Rotation(n.cross(v), Radian=acos(n*v)) #given the axis of rotation and the angle, use App.Rotation to compute the matrix that created that rotationm
-		m3=r.toMatrix()
-		sh4=sh3.transformGeometry(m3)
-	else:
-		sh4=sh3
-		m3=App.Matrix()
-
-	return sh4, m*m2*m3.inverse()	# returns the transformed shape and a placement matrix to be applied to this object.
-
 class MoveOriginParametric:
 	def __init__(self, obj):
 		obj.Proxy = self
@@ -240,13 +191,18 @@ class ViewProviderMoveOriginParametric:
 def create(name="MoveOriginParametric"):
     sel2 = FreeCADGui.Selection.getSelectionEx()[0] 
     print("sel2=",sel2)
+    _create(sel2.Object, sel2.SubElementNames, name)
 
-    myObj = App.ActiveDocument.addObject("Part::FeaturePython", "MoveOriginParametric")
+def _create(Object, SubElementNames, Name="MoveOriginParametric"):
+    """
+    _create(Object, SubElementNames, Name="MoveOriginParametric")
+    """
+    myObj = App.ActiveDocument.addObject("Part::FeaturePython", Name)
     MoveOriginParametric(myObj)
-    myObj.Support=(sel2.Object, sel2.SubElementNames)
+    myObj.Support=(Object, SubElementNames)
 
-    if 'Face' in sel2.SubElementNames[0]:
-        myObj.Face = int(sel2.SubElementNames[0][4:])-1
+    if 'Face' in SubElementNames[0]:
+        myObj.Face = int(SubElementNames[0][4:])-1
 #    if 'Internal' in sel2.SubElementNames[0]:
 #        myObj.Proxy.Internal=True
 #        myObj.Face = int(sel2.SubElementNames[0][12:])-1
