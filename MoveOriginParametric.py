@@ -191,11 +191,11 @@ class ViewProviderMoveOriginParametric:
 def create(name="MoveOriginParametric"):
     sel2 = FreeCADGui.Selection.getSelectionEx()[0] 
     print("sel2=",sel2)
-    _create(sel2.Object, sel2.SubElementNames, name)
+    createMoveOriginParametric(sel2.Object, sel2.SubElementNames, name)
 
-def _create(Object, SubElementNames, Name="MoveOriginParametric"):
+def createMoveOriginParametric(Object, SubElementNames, Name="MoveOriginParametric"):
     """
-    _create(Object, SubElementNames, Name="MoveOriginParametric")
+    _createMoveOriginParametric(Object, SubElementNames, Name="MoveOriginParametric")
     """
     myObj = App.ActiveDocument.addObject("Part::FeaturePython", Name)
     MoveOriginParametric(myObj)
