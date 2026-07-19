@@ -28,8 +28,12 @@ def Center(shp):
 	y=(y2-y1)/2 + y1
 	return x,y
 
-def computeRotationMatrix(f):
-	v=App.Vector(0,0,-1)
+def computeRotationMatrix(f, flip=False):
+	if flip:
+		v=App.Vector(0,0,1)
+	else:
+		v=App.Vector(0,0,-1)
+
 	n=f.normalAt(*Center(f))
 
 	r=App.Rotation(n.cross(v), Radian=acos(n*v)) #given the axis of rotation and the angle, use App.Rotation to compute the matrix that created that rotationm
@@ -50,7 +54,12 @@ class MoveOriginParametric:
 		obj.Proxy = self
 		obj.addProperty("App::PropertyLinkSubList", "Support", "Base")
 		obj.addProperty("App::PropertyBool", "Internal", "Base")
+		obj.addProperty("App::PropertyBool", "IgnorePlacement", "Base")
+		obj.addProperty("App::PropertyBool", "Flip", "Base")
 		obj.addProperty("App::PropertyInteger", "Face", "Dimensions")
+
+		obj.IgnorePlacement=False
+		obj.Flip=False
 
 	def onDocumentRestored(self, obj):
 		pass
@@ -61,7 +70,7 @@ class MoveOriginParametric:
 
 		if f>=0:
 			tm = computeMoveMatrix(subject.Shape.Faces[f])
-			rm = computeRotationMatrix(subject.Shape.Faces[f])
+			rm = computeRotationMatrix(subject.Shape.Faces[f], flip=obj.Flip)
 			m = rm*tm	# NOTE: rotation matrix MUST come first
 		else:
 			m = computeTranslationMatrix(subject.Shape)
@@ -72,7 +81,8 @@ class MoveOriginParametric:
 		s = s.transformGeometry(m)
 
 		obj.Shape = s
-		obj.Placement.Matrix=pm*m.inverse()
+		if not obj.IgnorePlacement:
+			obj.Placement.Matrix=pm*m.inverse()
 		
 #		if self.Internal:
 #			f = obj.Base.InternalShape.Faces[obj.Face]
