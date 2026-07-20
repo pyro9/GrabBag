@@ -73,7 +73,7 @@ class MoveOriginParametric:
 			rm = computeRotationMatrix(subject.Shape.Faces[f], flip=obj.Flip)
 			m = rm*tm	# NOTE: rotation matrix MUST come first
 		else:
-			m = computeTranslationMatrix(subject.Shape)
+			m = computeMoveMatrix(subject.Shape)
 
 		pm = subject.Placement.Matrix
 		s = subject.Shape.copy()
@@ -211,8 +211,11 @@ def createMoveOriginParametric(Object, SubElementNames, Name="MoveOriginParametr
     MoveOriginParametric(myObj)
     myObj.Support=(Object, SubElementNames)
 
-    if 'Face' in SubElementNames[0]:
+    if SubElementNames and 'Face' in SubElementNames[0]:
         myObj.Face = int(SubElementNames[0][4:])-1
+    else:
+        myObj.Face = -1
+
 #    if 'Internal' in sel2.SubElementNames[0]:
 #        myObj.Proxy.Internal=True
 #        myObj.Face = int(sel2.SubElementNames[0][12:])-1
